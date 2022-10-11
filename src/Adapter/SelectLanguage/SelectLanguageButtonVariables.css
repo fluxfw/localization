@@ -1,0 +1,7 @@
+:root {
+    --select-language-button-active-button-background-color: var(--color-scheme-foreground, #000000);
+    --select-language-button-active-button-foreground-color: var(--color-scheme-background, #ffffff);
+    --select-language-button-button-background-color: var(--color-scheme-background, #ffffff);
+    --select-language-button-button-foreground-color: var(--color-scheme-foreground, #000000);
+    --select-language-button-title-color: var(--color-scheme-foreground, #000000);
+}

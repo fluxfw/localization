@@ -1,0 +1,14 @@
+{
+    "name": "flux-localization-api",
+    "productName": "flux-localization-api",
+    "version": "2022-10-11-1",
+    "description": "",
+    "keywords": [],
+    "homepage": "",
+    "peerDependencies": {
+        "flux-css-api": "*",
+        "flux-json-api": "*",
+        "flux-settings-api": "*"
+    },
+    "private": true
+}
