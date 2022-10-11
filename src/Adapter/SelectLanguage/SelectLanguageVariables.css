@@ -1,0 +1,4 @@
+:root {
+    --select-language-title-color: var(--color-scheme-foreground, #000000);
+    --select-language-title-line-color: var(--accent-color, #000000);
+}

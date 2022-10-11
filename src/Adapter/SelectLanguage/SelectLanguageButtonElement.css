@@ -1,0 +1,29 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.title {
+    color: var(--select-language-button-title-color);
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.button {
+    -webkit-tap-highlight-color: transparent;
+    background-color: var(--select-language-button-button-background-color);
+    color: var(--select-language-button-button-foreground-color);
+    cursor: pointer;
+    height: 30px;
+    line-height: 30px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.button:hover,
+.button:active {
+    background-color: var(--select-language-button-active-button-background-color);
+    color: var(--select-language-button-active-button-foreground-color);
+}

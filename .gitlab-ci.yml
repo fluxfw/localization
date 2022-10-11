@@ -1,0 +1,20 @@
+stages:
+    - test
+    - publish-utils
+
+lint:
+    stage: test
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/flux-js-lint:latest
+    script:
+        - flux-js-lint
+    only:
+        - branches
+        - tags
+
+publish-utils:
+    stage: publish-utils
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/flux-publish-utils:latest
+    script:
+        - publish-utils
+    only:
+        - main
