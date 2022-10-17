@@ -1,12 +1,7 @@
 import { GetDirectionCommand } from "../Command/GetDirectionCommand.mjs";
 import { GetLanguageCommand } from "../Command/GetLanguageCommand.mjs";
 import { GetLanguageNameCommand } from "../Command/GetLanguageNameCommand.mjs";
-import { GetLanguagesCommand } from "../Command/GetLanguagesCommand.mjs";
 import { GetSelectLanguageButtonElementCommand } from "../Command/GetSelectLanguageButtonElementCommand.mjs";
-import { ImportAvailableLanguagesJsonCommand } from "../Command/ImportAvailableLanguagesJsonCommand.mjs";
-import { ImportLocalizationJsonCommand } from "../Command/ImportLocalizationJsonCommand.mjs";
-import { LoadLocalizationCommand } from "../Command/LoadLocalizationCommand.mjs";
-import { SelectLanguageCommand } from "../Command/SelectLanguageCommand.mjs";
 import { TranslateCommand } from "../Command/TranslateCommand.mjs";
 
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
@@ -120,7 +115,7 @@ export class LocalizationService {
      * @returns {Promise<{preferred: {[key: string]: string}, other: {[key: string]: string}}>}
      */
     async getLanguages(localization_folder) {
-        return GetLanguagesCommand.new(
+        return (await import("../Command/GetLanguagesCommand.mjs")).GetLanguagesCommand.new(
             this
         )
             .getLanguages(
@@ -133,7 +128,7 @@ export class LocalizationService {
      * @returns {Promise<string[] | null>}
      */
     async importAvailableLanguagesJson(localization_folder) {
-        return ImportAvailableLanguagesJsonCommand.new(
+        return (await import("../Command/ImportAvailableLanguagesJsonCommand.mjs")).ImportAvailableLanguagesJsonCommand.new(
             this.#json_api
         )
             .importAvailableLanguagesJson(
@@ -147,7 +142,7 @@ export class LocalizationService {
      * @returns {Promise<{[key: string]: string} | null>}
      */
     async importLocalizationJson(localization_folder, language) {
-        return ImportLocalizationJsonCommand.new(
+        return (await import("../Command/ImportLocalizationJsonCommand.mjs")).ImportLocalizationJsonCommand.new(
             this.#json_api
         )
             .importLocalizationJson(
@@ -162,7 +157,7 @@ export class LocalizationService {
      * @returns {Promise<Localization | null>}
      */
     async loadLocalization(localization_folder, language = null) {
-        return LoadLocalizationCommand.new(
+        return (await import("../Command/LoadLocalizationCommand.mjs")).LoadLocalizationCommand.new(
             this
         )
             .loadLocalization(
@@ -178,7 +173,7 @@ export class LocalizationService {
      * @returns {Promise<string>}
      */
     async selectLanguage(localization_folder, load_module, force = null) {
-        return SelectLanguageCommand.new(
+        return (await import("../Command/SelectLanguageCommand.mjs")).SelectLanguageCommand.new(
             this.#css_api,
             this.#get_language_change_listeners,
             this,

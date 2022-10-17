@@ -1,5 +1,4 @@
 import { LANGUAGE_SETTINGS_KEY } from "../../../Adapter/Settings/LANGUAGE_SETTINGS_KEY.mjs";
-import { SelectLanguageElement } from "../../../Adapter/SelectLanguage/SelectLanguageElement.mjs";
 
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
 /** @typedef {import("../../../Adapter/SelectLanguage/getLanguageChangeListeners.mjs").getLanguageChangeListeners} getLanguageChangeListeners */
@@ -76,6 +75,8 @@ export class SelectLanguageCommand {
                     fallback_language
                 );
             } else {
+                const { SelectLanguageElement } = await import("../../../Adapter/SelectLanguage/SelectLanguageElement.mjs");
+
                 const languages = await this.#localization_service.getLanguages(
                     localization_folder
                 );

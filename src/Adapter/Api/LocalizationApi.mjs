@@ -1,9 +1,9 @@
 import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_MODULE.mjs";
-import { LocalizationService } from "../../Service/Localization/Port/LocalizationService.mjs";
 
 /** @typedef {import("../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
 /** @typedef {import("../../../../flux-json-api/src/Adapter/Api/JsonApi.mjs").JsonApi} JsonApi */
 /** @typedef {import("../SelectLanguage/languageChangeListener.mjs").languageChangeListener} languageChangeListener */
+/** @typedef {import("../../Service/Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
 /** @typedef {import("../SelectLanguage/Localization.mjs").Localization} Localization */
 /** @typedef {import("../SelectLanguage/Module.mjs").Module} Module */
 /** @typedef {import("../SelectLanguage/selectLanguage.mjs").selectLanguage} selectLanguage */
@@ -80,7 +80,7 @@ export class LocalizationApi {
         this.#modules ??= new Map();
         this.#localizations ??= new Map();
 
-        this.#localization_service ??= this.#getLocalizationService();
+        this.#localization_service ??= await this.#getLocalizationService();
 
         this.addModule(
             `${__dirname}/../Localization`,
@@ -254,10 +254,10 @@ export class LocalizationApi {
     }
 
     /**
-     * @returns {LocalizationService}
+     * @returns {Promise<LocalizationService>}
      */
-    #getLocalizationService() {
-        return LocalizationService.new(
+    async #getLocalizationService() {
+        return (await import("../../Service/Localization/Port/LocalizationService.mjs")).LocalizationService.new(
             this.#css_api,
             () => this.#language_change_listeners,
             this.#json_api,
