@@ -93,6 +93,7 @@ export class SelectLanguageElement extends HTMLElement {
 
     /**
      * @param {Event} e
+     * @returns {void}
      */
     handleEvent(e) {
         switch (true) {
