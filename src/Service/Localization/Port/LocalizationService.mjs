@@ -48,8 +48,8 @@ export class LocalizationService {
     }
 
     /**
-     * @param {getLanguageChangeListeners} get_language_change_listeners
      * @param {CssApi} css_api
+     * @param {getLanguageChangeListeners} get_language_change_listeners
      * @param {JsonApi} json_api
      * @param {SettingsApi} settings_api
      * @private

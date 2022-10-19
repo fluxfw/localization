@@ -289,7 +289,7 @@ export class LocalizationApi {
     }
 
     /**
-     * @param {string | null} mooule
+     * @param {string | null} module
      * @returns {Promise<void>}
      */
     async #loadModule(module = null) {
