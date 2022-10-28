@@ -1,7 +1,6 @@
 import { GetDirectionCommand } from "../Command/GetDirectionCommand.mjs";
 import { GetLanguageCommand } from "../Command/GetLanguageCommand.mjs";
 import { GetLanguageNameCommand } from "../Command/GetLanguageNameCommand.mjs";
-import { GetSelectLanguageButtonElementCommand } from "../Command/GetSelectLanguageButtonElementCommand.mjs";
 import { TranslateCommand } from "../Command/TranslateCommand.mjs";
 
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
@@ -97,10 +96,10 @@ export class LocalizationService {
     /**
      * @param {selectLanguage} select_language
      * @param {Localization | null} localization
-     * @returns {SelectLanguageButtonElement}
+     * @returns {Promise<SelectLanguageButtonElement>}
      */
-    getSelectLanguageButtonElement(select_language, localization = null) {
-        return GetSelectLanguageButtonElementCommand.new(
+    async getSelectLanguageButtonElement(select_language, localization = null) {
+        return (await import("../Command/GetSelectLanguageButtonElementCommand.mjs")).GetSelectLanguageButtonElementCommand.new(
             this.#css_api,
             this
         )
