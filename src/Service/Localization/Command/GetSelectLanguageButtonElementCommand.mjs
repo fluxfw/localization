@@ -1,9 +1,8 @@
-import { SelectLanguageButtonElement } from "../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs";
-
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
 /** @typedef {import("../../../Adapter/SelectLanguage/Localization.mjs").Localization} Localization */
 /** @typedef {import("../Port/LocalizationService.mjs").LocalizationService} LocalizationService */
 /** @typedef {import("../../../Adapter/SelectLanguage/selectLanguage.mjs").selectLanguage} selectLanguage */
+/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs").SelectLanguageButtonElement} SelectLanguageButtonElement */
 
 export class GetSelectLanguageButtonElementCommand {
     /**
@@ -40,10 +39,10 @@ export class GetSelectLanguageButtonElementCommand {
     /**
      * @param {selectLanguage} select_language
      * @param {Localization | null} localization
-     * @returns {SelectLanguageButtonElement}
+     * @returns {Promise<SelectLanguageButtonElement>}
      */
-    getSelectLanguageButtonElement(select_language, localization = null) {
-        return SelectLanguageButtonElement.new(
+    async getSelectLanguageButtonElement(select_language, localization = null) {
+        return (await import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs")).SelectLanguageButtonElement.new(
             this.#css_api,
             this.#localization_service.getLanguageName(
                 this.#localization_service.getLanguage(

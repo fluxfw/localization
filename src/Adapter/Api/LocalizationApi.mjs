@@ -137,9 +137,9 @@ export class LocalizationApi {
      * @param {string | null} module
      * @param {() => Promise<void> | null} ensure
      * @param {selectLanguage | null} after_select
-     * @returns {SelectLanguageButtonElement}
+     * @returns {Promise<SelectLanguageButtonElement>}
      */
-    getSelectLanguageButtonElement(localization_folder, module = null, ensure = null, after_select = null) {
+    async getSelectLanguageButtonElement(localization_folder, module = null, ensure = null, after_select = null) {
         return this.#localization_service.getSelectLanguageButtonElement(
             async () => {
                 await this.selectLanguage(
