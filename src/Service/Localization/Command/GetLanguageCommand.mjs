@@ -17,9 +17,9 @@ export class GetLanguageCommand {
 
     /**
      * @param {Localization | null} localization
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getLanguage(localization = null) {
+    async getLanguage(localization = null) {
         return localization?.language ?? "en";
     }
 }

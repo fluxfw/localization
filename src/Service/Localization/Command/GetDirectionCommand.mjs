@@ -17,9 +17,9 @@ export class GetDirectionCommand {
 
     /**
      * @param {Localization | null} localization
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getDirection(localization = null) {
+    async getDirection(localization = null) {
         return ((localization?.language ?? null) !== null ? new Intl.Locale(localization.language)?.textInfo?.direction : null) ?? "ltr";
     }
 }

@@ -62,7 +62,7 @@ export class SelectLanguageCommand {
      * @returns {Promise<string>}
      */
     async selectLanguage(localization_folder, load_module, force = null) {
-        let language = this.#getLanguage();
+        let language = await this.#getLanguage();
 
         if (language === "" || force === true) {
             const {
@@ -88,11 +88,11 @@ export class SelectLanguageCommand {
                         language,
                         languages,
                         this.#localization_service,
-                        new_language => {
+                        async new_language => {
                             select_language_element.remove();
 
                             if (new_language !== null) {
-                                this.#setLanguage(
+                                await this.#setLanguage(
                                     new_language
                                 );
                                 if (language === "") {
@@ -120,9 +120,9 @@ export class SelectLanguageCommand {
     }
 
     /**
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    #getLanguage() {
+    async #getLanguage() {
         return this.#settings_api.get(
             LANGUAGE_SETTINGS_KEY,
             ""
@@ -131,10 +131,10 @@ export class SelectLanguageCommand {
 
     /**
      * @param {string} language
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    #setLanguage(language) {
-        this.#settings_api.store(
+    async #setLanguage(language) {
+        await this.#settings_api.store(
             LANGUAGE_SETTINGS_KEY,
             language
         );

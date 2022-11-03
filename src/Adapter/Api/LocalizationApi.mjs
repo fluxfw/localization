@@ -80,7 +80,7 @@ export class LocalizationApi {
         this.#modules ??= new Map();
         this.#localizations ??= new Map();
 
-        this.#localization_service ??= await this.#getLocalizationService();
+        await this.#getLocalizationService();
 
         this.addModule(
             `${__dirname}/../Localization`,
@@ -110,10 +110,10 @@ export class LocalizationApi {
 
     /**
      * @param {string | null} module
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getDirection(module = null) {
-        return this.#localization_service.getDirection(
+    async getDirection(module = null) {
+        return (await this.#getLocalizationService()).getDirection(
             this.#getLocalization(
                 module
             )
@@ -122,10 +122,10 @@ export class LocalizationApi {
 
     /**
      * @param {string | null} module
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getLanguage(module = null) {
-        return this.#localization_service.getLanguage(
+    async getLanguage(module = null) {
+        return (await this.#getLocalizationService()).getLanguage(
             this.#getLocalization(
                 module
             )
@@ -140,7 +140,7 @@ export class LocalizationApi {
      * @returns {Promise<SelectLanguageButtonElement>}
      */
     async getSelectLanguageButtonElement(localization_folder, module = null, ensure = null, after_select = null) {
-        return this.#localization_service.getSelectLanguageButtonElement(
+        return (await this.#getLocalizationService()).getSelectLanguageButtonElement(
             async () => {
                 await this.selectLanguage(
                     localization_folder,
@@ -173,7 +173,7 @@ export class LocalizationApi {
         );
 
         await this.#setLanguage(
-            await this.#localization_service.selectLanguage(
+            await (await this.#getLocalizationService()).selectLanguage(
                 localization_folder,
                 async () => {
                     await this.#loadModule(
@@ -192,7 +192,7 @@ export class LocalizationApi {
                         localization: this.#getLocalization(
                             LOCALIZATION_LOCALIZATION_MODULE
                         ),
-                        language: this.getLanguage(
+                        language: await this.getLanguage(
                             module
                         )
                     };
@@ -224,14 +224,14 @@ export class LocalizationApi {
 
     /**
      * @param {languageChangeListener} language_change_listener
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    addLanguageChangeListener(language_change_listener) {
+    async addLanguageChangeListener(language_change_listener) {
         this.#language_change_listeners.push(language_change_listener);
 
         if (this.#language !== null) {
             language_change_listener(
-                this.getLanguage()
+                await this.getLanguage()
             );
         }
     }
@@ -257,12 +257,14 @@ export class LocalizationApi {
      * @returns {Promise<LocalizationService>}
      */
     async #getLocalizationService() {
-        return (await import("../../Service/Localization/Port/LocalizationService.mjs")).LocalizationService.new(
+        this.#localization_service ??= (await import("../../Service/Localization/Port/LocalizationService.mjs")).LocalizationService.new(
             this.#css_api,
             () => this.#language_change_listeners,
             this.#json_api,
             this.#settings_api
         );
+
+        return this.#localization_service;
     }
 
     /**
@@ -280,7 +282,7 @@ export class LocalizationApi {
      */
     async #loadLocalization(localization_folder, module = null) {
         this.#addLocalization(
-            await this.#localization_service.loadLocalization(
+            await (await this.#getLocalizationService()).loadLocalization(
                 localization_folder,
                 this.#language
             ),
