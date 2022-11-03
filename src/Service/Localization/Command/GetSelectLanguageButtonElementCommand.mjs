@@ -44,8 +44,8 @@ export class GetSelectLanguageButtonElementCommand {
     async getSelectLanguageButtonElement(select_language, localization = null) {
         return (await import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs")).SelectLanguageButtonElement.new(
             this.#css_api,
-            this.#localization_service.getLanguageName(
-                this.#localization_service.getLanguage(
+            await this.#localization_service.getLanguageName(
+                await this.#localization_service.getLanguage(
                     localization
                 )
             ),

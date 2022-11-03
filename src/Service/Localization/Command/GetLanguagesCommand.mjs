@@ -42,7 +42,7 @@ export class GetLanguagesCommand {
                     continue;
                 }
 
-                preferred[language] = this.#localization_service.getLanguageName(
+                preferred[language] = await this.#localization_service.getLanguageName(
                     language
                 );
             }
@@ -52,7 +52,7 @@ export class GetLanguagesCommand {
                     continue;
                 }
 
-                other[language] = this.#localization_service.getLanguageName(
+                other[language] = await this.#localization_service.getLanguageName(
                     language
                 );
             }
@@ -65,7 +65,7 @@ export class GetLanguagesCommand {
                     continue;
                 }
 
-                preferred[language] = this.#localization_service.getLanguageName(
+                preferred[language] = await this.#localization_service.getLanguageName(
                     language
                 );
             }

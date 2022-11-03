@@ -1,6 +1,3 @@
-import { GetDirectionCommand } from "../Command/GetDirectionCommand.mjs";
-import { GetLanguageCommand } from "../Command/GetLanguageCommand.mjs";
-import { GetLanguageNameCommand } from "../Command/GetLanguageNameCommand.mjs";
 import { TranslateCommand } from "../Command/TranslateCommand.mjs";
 
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
@@ -62,10 +59,10 @@ export class LocalizationService {
 
     /**
      * @param {Localization | null} localization
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getDirection(localization = null) {
-        return GetDirectionCommand.new()
+    async getDirection(localization = null) {
+        return (await import("../Command/GetDirectionCommand.mjs")).GetDirectionCommand.new()
             .getDirection(
                 localization
             );
@@ -73,10 +70,10 @@ export class LocalizationService {
 
     /**
      * @param {Localization | null} localization
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getLanguage(localization = null) {
-        return GetLanguageCommand.new()
+    async getLanguage(localization = null) {
+        return (await import("../Command/GetLanguageCommand.mjs")).GetLanguageCommand.new()
             .getLanguage(
                 localization
             );
@@ -84,10 +81,10 @@ export class LocalizationService {
 
     /**
      * @param {string} language
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getLanguageName(language) {
-        return GetLanguageNameCommand.new()
+    async getLanguageName(language) {
+        return (await import("../Command/GetLanguageNameCommand.mjs")).GetLanguageNameCommand.new()
             .getLanguageName(
                 language
             );

@@ -15,9 +15,9 @@ export class GetLanguageNameCommand {
 
     /**
      * @param {string} language
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getLanguageName(language) {
+    async getLanguageName(language) {
         return new Intl.DisplayNames(language, { languageDisplay: "standard", type: "language" }).of(language);
     }
 }
