@@ -11,11 +11,11 @@ import { TranslateCommand } from "../Command/TranslateCommand.mjs";
 
 export class LocalizationService {
     /**
-     * @type {CssApi}
+     * @type {CssApi | null}
      */
     #css_api;
     /**
-     * @type {getLanguageChangeListeners}
+     * @type {getLanguageChangeListeners | null}
      */
     #get_language_change_listeners;
     /**
@@ -23,37 +23,37 @@ export class LocalizationService {
      */
     #json_api;
     /**
-     * @type {SettingsApi}
+     * @type {SettingsApi | null}
      */
     #settings_api;
 
     /**
-     * @param {CssApi} css_api
-     * @param {getLanguageChangeListeners} get_language_change_listeners
      * @param {JsonApi} json_api
-     * @param {SettingsApi} settings_api
+     * @param {CssApi | null} css_api
+     * @param {getLanguageChangeListeners | null} get_language_change_listeners
+     * @param {SettingsApi | null} settings_api
      * @returns {LocalizationService}
      */
-    static new(css_api, get_language_change_listeners, json_api, settings_api) {
+    static new(json_api, css_api = null, get_language_change_listeners = null, settings_api = null) {
         return new this(
+            json_api,
             css_api,
             get_language_change_listeners,
-            json_api,
             settings_api
         );
     }
 
     /**
-     * @param {CssApi} css_api
-     * @param {getLanguageChangeListeners} get_language_change_listeners
      * @param {JsonApi} json_api
-     * @param {SettingsApi} settings_api
+     * @param {CssApi | null} css_api
+     * @param {getLanguageChangeListeners | null} get_language_change_listeners
+     * @param {SettingsApi | null} settings_api
      * @private
      */
-    constructor(css_api, get_language_change_listeners, json_api, settings_api) {
+    constructor(json_api, css_api, get_language_change_listeners, settings_api) {
+        this.#json_api = json_api;
         this.#css_api = css_api;
         this.#get_language_change_listeners = get_language_change_listeners;
-        this.#json_api = json_api;
         this.#settings_api = settings_api;
     }
 
@@ -96,6 +96,10 @@ export class LocalizationService {
      * @returns {Promise<SelectLanguageButtonElement>}
      */
     async getSelectLanguageButtonElement(select_language, localization = null) {
+        if (this.#css_api === null) {
+            throw new Error("Missing CssApi");
+        }
+
         return (await import("../Command/GetSelectLanguageButtonElementCommand.mjs")).GetSelectLanguageButtonElementCommand.new(
             this.#css_api,
             this
@@ -169,6 +173,16 @@ export class LocalizationService {
      * @returns {Promise<string>}
      */
     async selectLanguage(localization_folder, load_module, force = null) {
+        if (this.#css_api === null) {
+            throw new Error("Missing CssApi");
+        }
+        if (this.#get_language_change_listeners === null) {
+            throw new Error("Missing getLanguageChangeListeners");
+        }
+        if (this.#settings_api === null) {
+            throw new Error("Missing SettingsApi");
+        }
+
         return (await import("../Command/SelectLanguageCommand.mjs")).SelectLanguageCommand.new(
             this.#css_api,
             this.#get_language_change_listeners,

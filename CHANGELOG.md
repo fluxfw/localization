@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2022-11-07-1
+
+Changes:
+
+- Optional `CssApi`/`SettingsApi` for basic
+
 ## v2022-11-03-1
 
 Changes:
