@@ -14,7 +14,7 @@ const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))
 
 export class LocalizationApi {
     /**
-     * @type {CssApi}
+     * @type {CssApi | null}
      */
     #css_api;
     /**
@@ -42,33 +42,33 @@ export class LocalizationApi {
      */
     #modules = null;
     /**
-     * @type {SettingsApi}
+     * @type {SettingsApi | null}
      */
     #settings_api;
 
     /**
-     * @param {CssApi} css_api
      * @param {JsonApi} json_api
-     * @param {SettingsApi} settings_api
+     * @param {CssApi | null} css_api
+     * @param {SettingsApi | null} settings_api
      * @returns {LocalizationApi}
      */
-    static new(css_api, json_api, settings_api) {
+    static new(json_api, css_api = null, settings_api = null) {
         return new this(
-            css_api,
             json_api,
+            css_api,
             settings_api
         );
     }
 
     /**
-     * @param {CssApi} css_api
      * @param {JsonApi} json_api
-     * @param {SettingsApi} settings_api
+     * @param {CssApi | null} css_api
+     * @param {SettingsApi | null} settings_api
      * @private
      */
-    constructor(css_api, json_api, settings_api) {
-        this.#css_api = css_api;
+    constructor(json_api, css_api, settings_api) {
         this.#json_api = json_api;
+        this.#css_api = css_api;
         this.#settings_api = settings_api;
         this.#language_change_listeners = [];
     }
@@ -87,14 +87,16 @@ export class LocalizationApi {
             LOCALIZATION_LOCALIZATION_MODULE
         );
 
-        this.#css_api.importCssToRoot(
-            document,
-            `${__dirname}/../SelectLanguage/SelectLanguageVariables.css`
-        );
-        this.#css_api.importCssToRoot(
-            document,
-            `${__dirname}/../SelectLanguage/SelectLanguageButtonVariables.css`
-        );
+        if (this.#css_api !== null) {
+            this.#css_api.importCssToRoot(
+                document,
+                `${__dirname}/../SelectLanguage/SelectLanguageVariables.css`
+            );
+            this.#css_api.importCssToRoot(
+                document,
+                `${__dirname}/../SelectLanguage/SelectLanguageButtonVariables.css`
+            );
+        }
     }
 
     /**
@@ -258,9 +260,9 @@ export class LocalizationApi {
      */
     async #getLocalizationService() {
         this.#localization_service ??= (await import("../../Service/Localization/Port/LocalizationService.mjs")).LocalizationService.new(
+            this.#json_api,
             this.#css_api,
             () => this.#language_change_listeners,
-            this.#json_api,
             this.#settings_api
         );
 
