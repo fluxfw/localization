@@ -1,3 +1,4 @@
+/** @typedef {import("../../../Adapter/Language/Languages.mjs").Languages} Languages */
 /** @typedef {import("../Port/LocalizationService.mjs").LocalizationService} LocalizationService */
 
 export class GetLanguagesCommand {
@@ -26,7 +27,7 @@ export class GetLanguagesCommand {
 
     /**
      * @param {string} localization_folder
-     * @returns {Promise<{preferred: {[key: string]: string}, other: {[key: string]: string}}>}
+     * @returns {Promise<Languages>}
      */
     async getLanguages(localization_folder) {
         const available_languages = await this.#localization_service.importAvailableLanguagesJson(
@@ -37,14 +38,16 @@ export class GetLanguagesCommand {
         const other = {};
 
         if (available_languages !== null) {
-            for (const language of navigator.languages) {
-                if (!available_languages.includes(language)) {
-                    continue;
-                }
+            if ("navigator" in globalThis) {
+                for (const language of navigator.languages) {
+                    if (!available_languages.includes(language)) {
+                        continue;
+                    }
 
-                preferred[language] = await this.#localization_service.getLanguageName(
-                    language
-                );
+                    preferred[language] = await this.#localization_service.getLanguageName(
+                        language
+                    );
+                }
             }
 
             for (const language of available_languages) {
@@ -57,17 +60,19 @@ export class GetLanguagesCommand {
                 );
             }
         } else {
-            for (const language of navigator.languages) {
-                if (await this.#localization_service.importLocalizationJson(
-                    localization_folder,
-                    language
-                ) === null) {
-                    continue;
-                }
+            if ("navigator" in globalThis) {
+                for (const language of navigator.languages) {
+                    if (await this.#localization_service.importLocalizationJson(
+                        localization_folder,
+                        language
+                    ) === null) {
+                        continue;
+                    }
 
-                preferred[language] = await this.#localization_service.getLanguageName(
-                    language
-                );
+                    preferred[language] = await this.#localization_service.getLanguageName(
+                        language
+                    );
+                }
             }
         }
 

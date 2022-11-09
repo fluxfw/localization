@@ -1,3 +1,3 @@
 /**
- * @typedef {() => void} selectLanguage
+ * @typedef {() => Promise<void>} selectLanguage
  */

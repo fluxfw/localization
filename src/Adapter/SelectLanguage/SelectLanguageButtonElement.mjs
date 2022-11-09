@@ -1,5 +1,6 @@
+import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_MODULE.mjs";
+
 /** @typedef {import("../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("./Localization.mjs").Localization} Localization */
 /** @typedef {import("../../Service/Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
 /** @typedef {import("./selectLanguage.mjs").selectLanguage} selectLanguage */
 
@@ -7,17 +8,13 @@ const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))
 
 export class SelectLanguageButtonElement extends HTMLElement {
     /**
+     * @type {HTMLDivElement}
+     */
+    #button_element;
+    /**
      * @type {CssApi}
      */
     #css_api;
-    /**
-     * @type {string}
-     */
-    #language;
-    /**
-     * @type {Localization | null}
-     */
-    #localization;
     /**
      * @type {LocalizationService}
      */
@@ -25,46 +22,42 @@ export class SelectLanguageButtonElement extends HTMLElement {
     /**
      * @type {selectLanguage}
      */
-    #select;
+    #select_language;
     /**
      * @type {ShadowRoot}
      */
     #shadow;
+    /**
+     * @type {HTMLDivElement}
+     */
+    #title_element;
 
     /**
      * @param {CssApi} css_api
-     * @param {string} language
      * @param {LocalizationService} localization_service
-     * @param {selectLanguage} select
-     * @param {Localization | null} localization
+     * @param {selectLanguage} select_language
      * @returns {SelectLanguageButtonElement}
      */
-    static new(css_api, language, localization_service, select, localization = null) {
+    static new(css_api, localization_service, select_language) {
         return new this(
             css_api,
-            language,
             localization_service,
-            select,
-            localization
+            select_language
         );
     }
 
     /**
      * @param {CssApi} css_api
-     * @param {string} language
      * @param {LocalizationService} localization_service
-     * @param {selectLanguage} select
-     * @param {Localization | null} localization
+     * @param {selectLanguage} select_language
      * @private
      */
-    constructor(css_api, language, localization_service, select, localization) {
+    constructor(css_api, localization_service, select_language) {
         super();
 
         this.#css_api = css_api;
-        this.#language = language;
         this.#localization_service = localization_service;
-        this.#select = select;
-        this.#localization = localization;
+        this.#select_language = select_language;
 
         this.#shadow = this.attachShadow({ mode: "closed" });
         this.#css_api.importCssToRoot(
@@ -76,24 +69,34 @@ export class SelectLanguageButtonElement extends HTMLElement {
     }
 
     /**
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    #render() {
-        const title = document.createElement("div");
-        title.classList.add("title");
-        title.innerText = this.#localization_service.translate(
-            "Language",
-            this.#localization
-        );
-        this.#shadow.appendChild(title);
+    async #render() {
+        this.#title_element = document.createElement("div");
+        this.#title_element.classList.add("title");
+        this.#shadow.appendChild(this.#title_element);
 
-        const button = document.createElement("div");
-        button.classList.add("button");
-        button.innerText = this.#language;
-        button.addEventListener("click", async () => {
-            this.#select();
+        this.#button_element = document.createElement("div");
+        this.#button_element.classList.add("button");
+        this.#button_element.addEventListener("click", async () => {
+            await this.#select_language();
+            await this.#setText();
         });
-        this.#shadow.appendChild(button);
+        this.#shadow.appendChild(this.#button_element);
+
+        await this.#setText();
+    }
+
+    /**
+     * @returns {Promise<void>}
+     */
+    async #setText() {
+        this.#title_element.innerText = await this.#localization_service.translate(
+            "Language",
+            LOCALIZATION_LOCALIZATION_MODULE
+        );
+
+        this.#button_element.innerText = (await this.#localization_service.getLanguage()).name;
     }
 }
 

@@ -1,4 +1,4 @@
-/** @typedef {import("../../../Adapter/SelectLanguage/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
 
 export class GetDirectionCommand {
     /**
@@ -16,10 +16,10 @@ export class GetDirectionCommand {
     }
 
     /**
-     * @param {Localization | null} localization
+     * @param {string} language
      * @returns {Promise<string>}
      */
-    async getDirection(localization = null) {
-        return ((localization?.language ?? null) !== null ? new Intl.Locale(localization.language)?.textInfo?.direction : null) ?? "ltr";
+    async getDirection(language) {
+        return new Intl.Locale(language)?.textInfo?.direction ?? "ltr";
     }
 }
