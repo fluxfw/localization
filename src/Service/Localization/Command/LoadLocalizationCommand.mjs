@@ -1,5 +1,5 @@
 /** @typedef {import("../Port/LocalizationService.mjs").LocalizationService} LocalizationService */
-/** @typedef {import("../../../Adapter/SelectLanguage/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
 
 export class LoadLocalizationCommand {
     /**
@@ -28,7 +28,7 @@ export class LoadLocalizationCommand {
     /**
      * @param {string} localization_folder
      * @param {string | null} language
-     * @returns {Promise<Localization | null>}
+     * @returns {Promise<Localization>}
      */
     async loadLocalization(localization_folder, language = null) {
         const available_languages = await this.#localization_service.importAvailableLanguagesJson(
@@ -61,6 +61,9 @@ export class LoadLocalizationCommand {
             };
         }
 
-        return null;
+        return {
+            language: null,
+            localization: null
+        };
     }
 }

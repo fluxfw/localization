@@ -1,4 +1,5 @@
-/** @typedef {import("../../../Adapter/SelectLanguage/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../../Adapter/Language/Placeholders.mjs").Placeholders} Placeholders */
 
 export class TranslateCommand {
     /**
@@ -17,14 +18,15 @@ export class TranslateCommand {
 
     /**
      * @param {string} text
-     * @param {Localization | null} localization
-     * @param {{[key: string]: string} | null} placeholders
-     * @returns {string}
+     * @param {Localization} localization
+     * @param {Placeholders | null} placeholders
+     * @param {string | null} default_text
+     * @returns {Promise<string>}
      */
-    translate(text, localization = null, placeholders = null) {
-        let _text = localization?.localization?.[text] ?? "";
+    async translate(text, localization, placeholders = null, default_text = null) {
+        let _text = localization.localization?.[text] ?? "";
         if (_text === "") {
-            _text = text;
+            _text = default_text ?? text;
         }
         return _text.replaceAll(/{([A-Za-z0-9_-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
     }

@@ -1,11 +1,12 @@
-import { TranslateCommand } from "../Command/TranslateCommand.mjs";
-
+/** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../Adapter/SelectLanguage/getLanguageChangeListeners.mjs").getLanguageChangeListeners} getLanguageChangeListeners */
+/** @typedef {import("../../../Adapter/SelectLanguage/ensureBeforeAndAfterSelectLanguage.mjs").ensureBeforeAndAfterSelectLanguage} ensureBeforeAndAfterSelectLanguage */
 /** @typedef {import("../../../../../flux-json-api/src/Adapter/Api/JsonApi.mjs").JsonApi} JsonApi */
-/** @typedef {import("../../../Adapter/SelectLanguage/loadModule.mjs").loadModule} loadModule */
-/** @typedef {import("../../../Adapter/SelectLanguage/Localization.mjs").Localization} Localization */
-/** @typedef {import("../../../Adapter/SelectLanguage/selectLanguage.mjs").selectLanguage} selectLanguage */
+/** @typedef {import("../../../Adapter/Language/Language.mjs").Language} Language */
+/** @typedef {import("../../../Adapter/Language/Languages.mjs").Languages} Languages */
+/** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../../Adapter/Language/Module.mjs").Module} Module */
+/** @typedef {import("../../../Adapter/Language/Placeholders.mjs").Placeholders} Placeholders */
 /** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs").SelectLanguageButtonElement} SelectLanguageButtonElement */
 /** @typedef {import("../../../../../flux-settings-api/src/Adapter/Api/SettingsApi.mjs").SettingsApi} SettingsApi */
 
@@ -15,13 +16,25 @@ export class LocalizationService {
      */
     #css_api;
     /**
-     * @type {getLanguageChangeListeners | null}
+     * @type {string | null}
      */
-    #get_language_change_listeners;
+    #default_language = null;
+    /**
+     * @type {string | null}
+     */
+    #default_module = null;
     /**
      * @type {JsonApi}
      */
     #json_api;
+    /**
+     * @type {Map<string, Localization>}
+     */
+    #localizations;
+    /**
+     * @type {Map<string, Module>}
+     */
+    #modules;
     /**
      * @type {SettingsApi | null}
      */
@@ -30,15 +43,13 @@ export class LocalizationService {
     /**
      * @param {JsonApi} json_api
      * @param {CssApi | null} css_api
-     * @param {getLanguageChangeListeners | null} get_language_change_listeners
      * @param {SettingsApi | null} settings_api
      * @returns {LocalizationService}
      */
-    static new(json_api, css_api = null, get_language_change_listeners = null, settings_api = null) {
+    static new(json_api, css_api = null, settings_api = null) {
         return new this(
             json_api,
             css_api,
-            get_language_change_listeners,
             settings_api
         );
     }
@@ -46,36 +57,70 @@ export class LocalizationService {
     /**
      * @param {JsonApi} json_api
      * @param {CssApi | null} css_api
-     * @param {getLanguageChangeListeners | null} get_language_change_listeners
      * @param {SettingsApi | null} settings_api
      * @private
      */
-    constructor(json_api, css_api, get_language_change_listeners, settings_api) {
+    constructor(json_api, css_api, settings_api) {
         this.#json_api = json_api;
         this.#css_api = css_api;
-        this.#get_language_change_listeners = get_language_change_listeners;
         this.#settings_api = settings_api;
+        this.#localizations = new Map();
+        this.#modules = new Map();
     }
 
     /**
-     * @param {Localization | null} localization
+     * @param {Localization} localization
+     * @param {string | null} module
+     * @returns {Promise<void>}
+     */
+    async addLocalization(localization, module = null) {
+        this.#localizations.set(`${module ?? this.#default_module ?? ""}_${localization.language ?? ""}`, localization);
+    }
+
+    /**
+     * @param {string} localization_folder
+     * @param {string | null} module
+     * @returns {Promise<void>}
+     */
+    async addModule(localization_folder, module = null) {
+        const _module = module ?? this.#default_module ?? "";
+
+        this.#modules.set(_module, {
+            localization_folder
+        });
+
+        [
+            ...this.#localizations.keys()
+        ].filter(key => key.startsWith(`${_module}_`)).forEach(key => {
+            this.#modules.delete(key);
+        });
+    }
+
+    /**
+     * @param {string} language
      * @returns {Promise<string>}
      */
-    async getDirection(localization = null) {
+    async getDirection(language) {
         return (await import("../Command/GetDirectionCommand.mjs")).GetDirectionCommand.new()
             .getDirection(
-                localization
+                language
             );
     }
 
     /**
-     * @param {Localization | null} localization
-     * @returns {Promise<string>}
+     * @param {string | null} module
+     * @param {string | null} language
+     * @returns {Promise<Language>}
      */
-    async getLanguage(localization = null) {
-        return (await import("../Command/GetLanguageCommand.mjs")).GetLanguageCommand.new()
+    async getLanguage(module = null, language = null) {
+        return (await import("../Command/GetLanguageCommand.mjs")).GetLanguageCommand.new(
+            this
+        )
             .getLanguage(
-                localization
+                await this.getLocalization(
+                    module,
+                    language
+                )
             );
     }
 
@@ -91,11 +136,72 @@ export class LocalizationService {
     }
 
     /**
-     * @param {selectLanguage} select_language
-     * @param {Localization | null} localization
+     * @param {string | null} module
+     * @returns {Promise<Languages>}
+     */
+    async getLanguages(module = null) {
+        return (await import("../Command/GetLanguagesCommand.mjs")).GetLanguagesCommand.new(
+            this
+        )
+            .getLanguages(
+                (await this.getModule(
+                    module
+                )).localization_folder
+            );
+    }
+
+    /**
+     * @param {string | null} module
+     * @param {string | null} language
+     * @returns {Promise<Localization>}
+     */
+    async getLocalization(module = null, language = null) {
+        const _language = language ?? this.#default_language;
+
+        const _localization = this.#localizations.get(`${module ?? this.#default_module ?? ""}_${_language ?? ""}`) ?? null;
+
+        if (_localization !== null) {
+            return _localization;
+        }
+
+        const localization = await (await import("../Command/LoadLocalizationCommand.mjs")).LoadLocalizationCommand.new(
+            this
+        )
+            .loadLocalization(
+                (await this.getModule(
+                    module
+                )).localization_folder,
+                _language
+            );
+
+        await this.addLocalization(
+            localization,
+            module
+        );
+
+        return localization;
+    }
+
+    /**
+     * @param {string | null} module
+     * @returns {Promise<Module>}
+     */
+    async getModule(module = null) {
+        const _module = this.#modules.get(module ?? this.#default_module ?? "") ?? null;
+
+        if (_module === null) {
+            throw new Error(`Missing module ${module ?? this.#default_module ?? ""}`);
+        }
+
+        return _module;
+    }
+
+    /**
+     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
+     * @param {afterSelectLanguage | null} after_select_language
      * @returns {Promise<SelectLanguageButtonElement>}
      */
-    async getSelectLanguageButtonElement(select_language, localization = null) {
+    async getSelectLanguageButtonElement(ensure_before_and_after_select_language = null, after_select_language = null) {
         if (this.#css_api === null) {
             throw new Error("Missing CssApi");
         }
@@ -105,21 +211,8 @@ export class LocalizationService {
             this
         )
             .getSelectLanguageButtonElement(
-                select_language,
-                localization
-            );
-    }
-
-    /**
-     * @param {string} localization_folder
-     * @returns {Promise<{preferred: {[key: string]: string}, other: {[key: string]: string}}>}
-     */
-    async getLanguages(localization_folder) {
-        return (await import("../Command/GetLanguagesCommand.mjs")).GetLanguagesCommand.new(
-            this
-        )
-            .getLanguages(
-                localization_folder
+                ensure_before_and_after_select_language,
+                after_select_language
             );
     }
 
@@ -152,62 +245,63 @@ export class LocalizationService {
     }
 
     /**
-     * @param {string} localization_folder
-     * @param {string | null} language
-     * @returns {Promise<Localization | null>}
-     */
-    async loadLocalization(localization_folder, language = null) {
-        return (await import("../Command/LoadLocalizationCommand.mjs")).LoadLocalizationCommand.new(
-            this
-        )
-            .loadLocalization(
-                localization_folder,
-                language
-            );
-    }
-
-    /**
-     * @param {string} localization_folder
-     * @param {loadModule} load_module
+     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
      * @param {boolean | null} force
-     * @returns {Promise<string>}
+     * @returns {Promise<void>}
      */
-    async selectLanguage(localization_folder, load_module, force = null) {
+    async selectLanguage(ensure_before_and_after_select_language = null, force = null) {
         if (this.#css_api === null) {
             throw new Error("Missing CssApi");
-        }
-        if (this.#get_language_change_listeners === null) {
-            throw new Error("Missing getLanguageChangeListeners");
         }
         if (this.#settings_api === null) {
             throw new Error("Missing SettingsApi");
         }
 
-        return (await import("../Command/SelectLanguageCommand.mjs")).SelectLanguageCommand.new(
+        await (await import("../Command/SelectLanguageCommand.mjs")).SelectLanguageCommand.new(
             this.#css_api,
-            this.#get_language_change_listeners,
             this,
             this.#settings_api
         )
             .selectLanguage(
-                localization_folder,
-                load_module,
+                ensure_before_and_after_select_language,
                 force
             );
     }
 
     /**
-     * @param {string} text
-     * @param {Localization | null} localization
-     * @param {{[key: string]: string} | null} placeholders
-     * @returns {string}
+     * @param {string | null} default_language
+     * @returns {Promise<void>}
      */
-    translate(text, localization = null, placeholders = null) {
-        return TranslateCommand.new()
+    async setDefaultLanguage(default_language = null) {
+        this.#default_language = default_language;
+    }
+
+    /**
+     * @param {string | null} default_module
+     * @returns {Promise<void>}
+     */
+    async setDefaultModule(default_module = null) {
+        this.#default_module = default_module;
+    }
+
+    /**
+     * @param {string} text
+     * @param {string | null} module
+     * @param {Placeholders | null} placeholders
+     * @param {string | null} language
+     * @param {string | null} default_text
+     * @returns {Promise<string>}
+     */
+    async translate(text, module = null, placeholders = null, language = null, default_text = null) {
+        return (await import("../Command/TranslateCommand.mjs")).TranslateCommand.new()
             .translate(
                 text,
-                localization,
-                placeholders
+                await this.getLocalization(
+                    module,
+                    language
+                ),
+                placeholders,
+                default_text
             );
     }
 }

@@ -1,7 +1,7 @@
+/** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../Adapter/SelectLanguage/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../../Adapter/SelectLanguage/ensureBeforeAndAfterSelectLanguage.mjs").ensureBeforeAndAfterSelectLanguage} ensureBeforeAndAfterSelectLanguage */
 /** @typedef {import("../Port/LocalizationService.mjs").LocalizationService} LocalizationService */
-/** @typedef {import("../../../Adapter/SelectLanguage/selectLanguage.mjs").selectLanguage} selectLanguage */
 /** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs").SelectLanguageButtonElement} SelectLanguageButtonElement */
 
 export class GetSelectLanguageButtonElementCommand {
@@ -37,23 +37,24 @@ export class GetSelectLanguageButtonElementCommand {
     }
 
     /**
-     * @param {selectLanguage} select_language
-     * @param {Localization | null} localization
+     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
+     * @param {afterSelectLanguage | null} after_select_language
      * @returns {Promise<SelectLanguageButtonElement>}
      */
-    async getSelectLanguageButtonElement(select_language, localization = null) {
+    async getSelectLanguageButtonElement(ensure_before_and_after_select_language = null, after_select_language = null) {
         return (await import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs")).SelectLanguageButtonElement.new(
             this.#css_api,
-            await this.#localization_service.getLanguageName(
-                await this.#localization_service.getLanguage(
-                    localization
-                )
-            ),
             this.#localization_service,
-            () => {
-                select_language();
-            },
-            localization
+            async () => {
+                await this.#localization_service.selectLanguage(
+                    ensure_before_and_after_select_language,
+                    true
+                );
+
+                if (after_select_language !== null) {
+                    after_select_language();
+                }
+            }
         );
     }
 }
