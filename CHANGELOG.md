@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2022-11-10-2
+
+Changes:
+
+- Fix font size
+
 ## v2022-11-10-1
 
 Changes:
