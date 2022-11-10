@@ -55,8 +55,11 @@ export class SelectLanguageCommand {
 
         if (language === "" || force === true) {
             if (force === false) {
+                ({
+                    language
+                } = await this.#localization_service.getLanguage());
                 this.#setLanguage(
-                    (await this.#localization_service.getLanguage()).language
+                    language
                 );
             } else {
                 if (language !== "") {
