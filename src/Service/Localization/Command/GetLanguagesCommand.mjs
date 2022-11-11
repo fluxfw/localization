@@ -78,7 +78,11 @@ export class GetLanguagesCommand {
 
         return {
             preferred,
-            other
+            other,
+            all: {
+                ...preferred,
+                ...other
+            }
         };
     }
 }

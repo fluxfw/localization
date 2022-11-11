@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2022-11-11-1
+
+Changes:
+
+- `SelectLanguageButtonsElement`
+
 ## v2022-11-10-2
 
 Changes:

@@ -8,6 +8,7 @@
 /** @typedef {import("../../../Adapter/Language/Module.mjs").Module} Module */
 /** @typedef {import("../../../Adapter/Language/Placeholders.mjs").Placeholders} Placeholders */
 /** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs").SelectLanguageButtonElement} SelectLanguageButtonElement */
+/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonsElement.mjs").SelectLanguageButtonsElement} SelectLanguageButtonsElement */
 /** @typedef {import("../../../../../flux-settings-api/src/Adapter/Api/SettingsApi.mjs").SettingsApi} SettingsApi */
 
 export class LocalizationService {
@@ -151,6 +152,20 @@ export class LocalizationService {
     }
 
     /**
+     * @returns {Promise<string>}
+     */
+    async getLanguageSetting() {
+        if (this.#settings_api === null) {
+            throw new Error("Missing SettingsApi");
+        }
+
+        return (await import("../Command/GetLanguageSettingCommand.mjs")).GetLanguageSettingCommand.new(
+            this.#settings_api
+        )
+            .getLanguageSetting();
+    }
+
+    /**
      * @param {string | null} module
      * @param {string | null} language
      * @returns {Promise<Localization>}
@@ -217,6 +232,24 @@ export class LocalizationService {
     }
 
     /**
+     * @param {afterSelectLanguage | null} after_select_language
+     * @returns {Promise<SelectLanguageButtonsElement>}
+     */
+    async getSelectLanguageButtonsElement(after_select_language = null) {
+        if (this.#css_api === null) {
+            throw new Error("Missing CssApi");
+        }
+
+        return (await import("../Command/GetSelectLanguageButtonsElementCommand.mjs")).GetSelectLanguageButtonsElementCommand.new(
+            this.#css_api,
+            this
+        )
+            .getSelectLanguageButtonsElement(
+                after_select_language
+            );
+    }
+
+    /**
      * @param {string} localization_folder
      * @returns {Promise<string[] | null>}
      */
@@ -253,14 +286,10 @@ export class LocalizationService {
         if (this.#css_api === null) {
             throw new Error("Missing CssApi");
         }
-        if (this.#settings_api === null) {
-            throw new Error("Missing SettingsApi");
-        }
 
         await (await import("../Command/SelectLanguageCommand.mjs")).SelectLanguageCommand.new(
             this.#css_api,
-            this,
-            this.#settings_api
+            this
         )
             .selectLanguage(
                 ensure_before_and_after_select_language,
@@ -282,6 +311,23 @@ export class LocalizationService {
      */
     async setDefaultModule(default_module = null) {
         this.#default_module = default_module;
+    }
+
+    /**
+     * @param {string} language
+     * @returns {Promise<void>}
+     */
+    async setLanguageSetting(language) {
+        if (this.#settings_api === null) {
+            throw new Error("Missing SettingsApi");
+        }
+
+        await (await import("../Command/SetLanguageSettingCommand.mjs")).SetLanguageSettingCommand.new(
+            this.#settings_api
+        )
+            .setLanguageSetting(
+                language
+            );
     }
 
     /**
