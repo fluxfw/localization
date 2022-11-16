@@ -1,13 +1,15 @@
 {
     "name": "flux-localization-api",
     "productName": "flux-localization-api",
-    "version": "2022-11-11-1",
+    "version": "2022-11-16-1",
     "description": "",
     "keywords": [],
     "homepage": "",
     "peerDependencies": {
+        "flux-json-api": "*"
+    },
+    "optionalDependencies": {
         "flux-css-api": "*",
-        "flux-json-api": "*",
         "flux-settings-api": "*"
     },
     "private": true

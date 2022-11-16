@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2022-11-16-1
+
+Changes:
+
+- `optionalDependencies`
+
 ## v2022-11-11-1
 
 Changes:
