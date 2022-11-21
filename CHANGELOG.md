@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2022-11-21-1
+
+Changes:
+
+- `Array.from`
+
 ## v2022-11-16-1
 
 Changes:

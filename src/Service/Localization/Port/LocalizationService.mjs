@@ -90,9 +90,7 @@ export class LocalizationService {
             localization_folder
         });
 
-        [
-            ...this.#localizations.keys()
-        ].filter(key => key.startsWith(`${_module}_`)).forEach(key => {
+        Array.from(this.#localizations.keys()).filter(key => key.startsWith(`${_module}_`)).forEach(key => {
             this.#modules.delete(key);
         });
     }
