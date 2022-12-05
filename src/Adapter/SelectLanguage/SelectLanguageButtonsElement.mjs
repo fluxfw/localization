@@ -85,8 +85,8 @@ export class SelectLanguageButtonsElement extends HTMLElement {
             language,
             name
         ] of Object.entries((await this.#localization_service.getLanguages()).all)) {
-            const button_element = document.createElement("div");
-            button_element.classList.add("button");
+            const button_element = document.createElement("button");
+            button_element.type = "button";
 
             if (language === _language.language) {
                 button_element.dataset.selected = true;
