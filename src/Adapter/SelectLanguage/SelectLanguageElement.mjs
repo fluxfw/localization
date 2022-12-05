@@ -184,6 +184,7 @@ export class SelectLanguageElement extends HTMLElement {
             "Cancel",
             LOCALIZATION_LOCALIZATION_MODULE
         );
+        cancel_button.type = "button";
         buttons.appendChild(cancel_button);
 
         buttons.append(" ");
@@ -195,6 +196,7 @@ export class SelectLanguageElement extends HTMLElement {
             "Select",
             LOCALIZATION_LOCALIZATION_MODULE
         );
+        select_button.type = "button";
         buttons.appendChild(select_button);
 
         selector.addEventListener("change", () => {

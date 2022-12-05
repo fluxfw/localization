@@ -9,9 +9,11 @@
     font-weight: bold;
 }
 
-.button {
+button {
     -webkit-tap-highlight-color: transparent;
     background-color: var(--select-language-button-button-background-color);
+    border: none;
+    border-radius: 0px;
     color: var(--select-language-button-button-foreground-color);
     cursor: pointer;
     font-size: 16px;
@@ -23,8 +25,8 @@
     width: 100%;
 }
 
-.button:hover,
-.button:active {
+button:hover,
+button:active {
     background-color: var(--select-language-button-active-button-background-color);
     color: var(--select-language-button-active-button-foreground-color);
 }

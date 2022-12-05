@@ -76,8 +76,8 @@ export class SelectLanguageButtonElement extends HTMLElement {
         this.#title_element.classList.add("title");
         this.#shadow.appendChild(this.#title_element);
 
-        this.#button_element = document.createElement("div");
-        this.#button_element.classList.add("button");
+        this.#button_element = document.createElement("button");
+        this.#button_element.type = "button";
         this.#button_element.addEventListener("click", async () => {
             await this.#select_language();
             await this.#setText();

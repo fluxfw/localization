@@ -19,9 +19,11 @@
     width: 100%;
 }
 
-.button {
+button {
     -webkit-tap-highlight-color: transparent;
     background-color: var(--select-language-button-button-background-color);
+    border: none;
+    border-radius: 0px;
     color: var(--select-language-button-button-foreground-color);
     flex-grow: 0;
     flex-shrink: 0;
@@ -35,17 +37,17 @@
     width: 80px;
 }
 
-.button:not([data-selected]) {
+button:not([data-selected]) {
     cursor: pointer;
 }
 
-.button:not([data-selected]):hover,
-.button:not([data-selected]):active {
+button:not([data-selected]):hover,
+button:not([data-selected]):active {
     background-color: var(--select-language-buttons-active-button-background-color);
     color: var(--select-language-buttons-active-button-foreground-color);
 }
 
-.button[data-selected] {
+button[data-selected] {
     background-color: var(--select-language-buttons-selected-button-background-color);
     color: var(--select-language-buttons-selected-button-foreground-color);
 }
