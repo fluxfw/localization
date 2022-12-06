@@ -84,7 +84,7 @@ export class SelectLanguageCommand {
                         }
                     );
 
-                    document.body.prepend(select_language_element);
+                    document.body.appendChild(select_language_element);
                 });
             }
         }
