@@ -99,7 +99,7 @@ export class SelectLanguageButtonsElement extends HTMLElement {
                     return;
                 }
 
-                for (const _button_element of this.#shadow.querySelectorAll(".button[data-selected]")) {
+                for (const _button_element of this.#shadow.querySelectorAll("button[data-selected]")) {
                     delete _button_element.dataset.selected;
                 }
 
