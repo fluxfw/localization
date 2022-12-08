@@ -4,7 +4,6 @@
 !.dockerignore
 !.gitignore
 !.gitlab-ci.yml
-!.npmignore
 !CHANGELOG.md
-!package.json
+!metadata.json
 !README.md

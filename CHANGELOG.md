@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2022-12-08-1
+
+Changes:
+
+- `metadata.json`
+
 ## v2022-12-07-1
 
 Changes:
