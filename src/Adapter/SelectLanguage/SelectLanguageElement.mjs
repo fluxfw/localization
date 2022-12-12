@@ -12,10 +12,6 @@ export class SelectLanguageElement extends HTMLElement {
      */
     #css_api;
     /**
-     * @type {string}
-     */
-    #language;
-    /**
      * @type {LocalizationService}
      */
     #localization_service;
@@ -27,18 +23,20 @@ export class SelectLanguageElement extends HTMLElement {
      * @type {ShadowRoot}
      */
     #shadow;
+    /**
+     * @type {HTMLDivElement}
+     */
+    #title_element;
 
     /**
      * @param {CssApi} css_api
-     * @param {string} language
      * @param {LocalizationService} localization_service
      * @param {setLanguage} set_language
      * @returns {SelectLanguageElement}
      */
-    static new(css_api, language, localization_service, set_language) {
+    static new(css_api, localization_service, set_language) {
         return new this(
             css_api,
-            language,
             localization_service,
             set_language
         );
@@ -46,16 +44,14 @@ export class SelectLanguageElement extends HTMLElement {
 
     /**
      * @param {CssApi} css_api
-     * @param {string} language
      * @param {LocalizationService} localization_service
      * @param {setLanguage} set_language
      * @private
      */
-    constructor(css_api, language, localization_service, set_language) {
+    constructor(css_api, localization_service, set_language) {
         super();
 
         this.#css_api = css_api;
-        this.#language = language;
         this.#localization_service = localization_service;
         this.#set_language = set_language;
 
@@ -69,148 +65,63 @@ export class SelectLanguageElement extends HTMLElement {
     }
 
     /**
-     * @param {Event} e
-     * @returns {void}
-     */
-    handleEvent(e) {
-        switch (true) {
-            case e.target === document.body:
-                switch (e.type) {
-                    case "keydown":
-                        switch (e.code) {
-                            case "Enter":
-                                this.#shadow.querySelector("button[data-select]").click();
-                                break;
-
-                            case "Escape":
-                                this.#shadow.querySelector("button[data-cancel]").click();
-                                break;
-
-                            default:
-                                break;
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    /**
-     * @param {string | null} language
-     * @returns {void}
-     */
-    #click(language = null) {
-        const selector = this.#shadow.querySelector("select");
-
-        if (selector.disabled) {
-            return;
-        }
-
-        selector.disabled = true;
-        this.#shadow.querySelector("button[data-cancel]").disabled = true;
-        this.#shadow.querySelector("button[data-select]").disabled = true;
-
-        removeEventListener("keydown", this);
-
-        this.#set_language(
-            language
-        );
-    }
-
-    /**
      * @returns {Promise<void>}
      */
     async #render() {
-        const title = document.createElement("div");
-        title.classList.add("title");
-        title.innerText = await this.#localization_service.translate(
-            "Select language",
+        this.#title_element = document.createElement("div");
+        this.#title_element.classList.add("title");
+        this.#title_element.innerText = await this.#localization_service.translate(
+            "Language",
             LOCALIZATION_LOCALIZATION_MODULE
         );
-        this.#shadow.appendChild(title);
+        this.#shadow.appendChild(this.#title_element);
 
-        const selector = document.createElement("select");
-        this.#shadow.appendChild(selector);
+        const _language = await this.#localization_service.getLanguage();
 
-        let value = this.#language;
-        if (value === "") {
-            value = (await this.#localization_service.getLanguage()).language;
-        }
-
-        const languages = await this.#localization_service.getLanguages();
+        const buttons_element = document.createElement("div");
+        buttons_element.classList.add("buttons");
 
         for (const [
             language,
             name
-        ] of Object.entries(languages.preferred)) {
-            const option = document.createElement("option");
-            option.text = name;
-            option.value = language;
-            selector.appendChild(option);
-        }
-        if (Object.keys(languages.other).length > 0) {
-            const other = document.createElement("optgroup");
-            other.label = await this.#localization_service.translate(
-                "Other",
-                LOCALIZATION_LOCALIZATION_MODULE
-            );
-            selector.appendChild(other);
+        ] of Object.entries((await this.#localization_service.getLanguages()).all)) {
+            const button_element = document.createElement("button");
+            button_element.type = "button";
 
-            for (const [
-                language,
-                name
-            ] of Object.entries(languages.other)) {
-                const option = document.createElement("option");
-                option.text = name;
-                option.value = language;
-                selector.appendChild(option);
+            if (language === _language.language) {
+                button_element.dataset.selected = true;
             }
+
+            button_element.innerText = name;
+            button_element.title = name;
+
+            button_element.addEventListener("click", async () => {
+                if (button_element.dataset.selected) {
+                    return;
+                }
+
+                for (const _button_element of this.#shadow.querySelectorAll("button[data-selected]")) {
+                    delete _button_element.dataset.selected;
+                }
+
+                button_element.dataset.selected = true;
+
+                this.#title_element.innerText = await this.#localization_service.translate(
+                    "Language",
+                    LOCALIZATION_LOCALIZATION_MODULE,
+                    null,
+                    language
+                );
+
+                this.#set_language(
+                    language
+                );
+            });
+
+            buttons_element.appendChild(button_element);
         }
-        selector.value = value;
 
-        const buttons = document.createElement("div");
-        this.#shadow.appendChild(buttons);
-
-        const cancel_button = document.createElement("button");
-        cancel_button.dataset.cancel = true;
-        cancel_button.disabled = this.#language === "";
-        cancel_button.innerText = await this.#localization_service.translate(
-            "Cancel",
-            LOCALIZATION_LOCALIZATION_MODULE
-        );
-        cancel_button.type = "button";
-        buttons.appendChild(cancel_button);
-
-        buttons.append(" ");
-
-        const select_button = document.createElement("button");
-        select_button.dataset.select = true;
-        select_button.disabled = selector.value === "";
-        select_button.innerText = await this.#localization_service.translate(
-            "Select",
-            LOCALIZATION_LOCALIZATION_MODULE
-        );
-        select_button.type = "button";
-        buttons.appendChild(select_button);
-
-        selector.addEventListener("change", () => {
-            select_button.disabled = selector.value === "";
-        });
-        cancel_button.addEventListener("click", () => {
-            this.#click();
-        });
-        select_button.addEventListener("click", () => {
-            this.#click(
-                selector.value
-            );
-        });
-        addEventListener("keydown", this);
+        this.#shadow.appendChild(buttons_element);
     }
 }
 

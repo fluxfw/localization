@@ -1,3 +1,0 @@
-/**
- * @typedef {() => Promise<void>} ensureBeforeAndAfterSelectLanguage
- */

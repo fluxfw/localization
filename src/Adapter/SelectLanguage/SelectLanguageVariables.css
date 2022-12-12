@@ -1,4 +1,9 @@
 :root {
+    --select-language-active-button-background-color: var(--color-scheme-accent, #000000);
+    --select-language-active-button-foreground-color: var(--color-scheme-accent-foreground, #ffffff);
+    --select-language-button-background-color: var(--color-scheme-background, #ffffff);
+    --select-language-button-foreground-color: var(--color-scheme-foreground, #000000);
+    --select-language-selected-button-background-color: var(--color-scheme-accent, #000000);
+    --select-language-selected-button-foreground-color: var(--color-scheme-accent-foreground, #ffffff);
     --select-language-title-color: var(--color-scheme-foreground, #000000);
-    --select-language-title-line-color: var(--color-scheme-accent, #000000);
 }
