@@ -6,6 +6,13 @@ Changes:
 
 \-
 
+## v2022-12-12-1
+
+Changes:
+
+- Rename language select
+- Remove old language select
+
 ## v2022-12-08-1
 
 Changes:

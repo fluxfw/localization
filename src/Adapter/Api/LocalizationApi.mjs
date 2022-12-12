@@ -2,14 +2,12 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_
 
 /** @typedef {import("../SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../SelectLanguage/ensureBeforeAndAfterSelectLanguage.mjs").ensureBeforeAndAfterSelectLanguage} ensureBeforeAndAfterSelectLanguage */
 /** @typedef {import("../../../../flux-json-api/src/Adapter/Api/JsonApi.mjs").JsonApi} JsonApi */
 /** @typedef {import("../Language/Language.mjs").Language} Language */
 /** @typedef {import("../Language/Languages.mjs").Languages} Languages */
 /** @typedef {import("../../Service/Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
 /** @typedef {import("../Language/Placeholders.mjs").Placeholders} Placeholders */
-/** @typedef {import("../SelectLanguage/SelectLanguageButtonElement.mjs").SelectLanguageButtonElement} SelectLanguageButtonElement */
-/** @typedef {import("../SelectLanguage/SelectLanguageButtonsElement.mjs").SelectLanguageButtonsElement} SelectLanguageButtonsElement */
+/** @typedef {import("../SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 /** @typedef {import("../../../../flux-settings-api/src/Adapter/Api/SettingsApi.mjs").SettingsApi} SettingsApi */
 
 const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
@@ -72,14 +70,6 @@ export class LocalizationApi {
                 document,
                 `${__dirname}/../SelectLanguage/SelectLanguageVariables.css`
             );
-            this.#css_api.importCssToRoot(
-                document,
-                `${__dirname}/../SelectLanguage/SelectLanguageButtonVariables.css`
-            );
-            this.#css_api.importCssToRoot(
-                document,
-                `${__dirname}/../SelectLanguage/SelectLanguageButtonsVariables.css`
-            );
         }
     }
 
@@ -118,37 +108,20 @@ export class LocalizationApi {
     }
 
     /**
-     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
      * @param {afterSelectLanguage | null} after_select_language
-     * @returns {Promise<SelectLanguageButtonElement>}
+     * @returns {Promise<SelectLanguageElement>}
      */
-    async getSelectLanguageButtonElement(ensure_before_and_after_select_language = null, after_select_language = null) {
-        return (await this.#getLocalizationService()).getSelectLanguageButtonElement(
-            ensure_before_and_after_select_language,
+    async getSelectLanguageElement(after_select_language = null) {
+        return (await this.#getLocalizationService()).getSelectLanguageElement(
             after_select_language
         );
     }
 
     /**
-     * @param {afterSelectLanguage | null} after_select_language
-     * @returns {Promise<SelectLanguageButtonsElement>}
-     */
-    async getSelectLanguageButtonsElement(after_select_language = null) {
-        return (await this.#getLocalizationService()).getSelectLanguageButtonsElement(
-            after_select_language
-        );
-    }
-
-    /**
-     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
-     * @param {boolean | null} force
      * @returns {Promise<void>}
      */
-    async selectLanguage(ensure_before_and_after_select_language = null, force = null) {
-        await (await this.#getLocalizationService()).selectLanguage(
-            ensure_before_and_after_select_language,
-            force
-        );
+    async selectDefaultLanguage() {
+        await (await this.#getLocalizationService()).selectDefaultLanguage();
     }
 
     /**

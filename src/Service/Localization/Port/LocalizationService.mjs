@@ -1,14 +1,12 @@
 /** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../Adapter/SelectLanguage/ensureBeforeAndAfterSelectLanguage.mjs").ensureBeforeAndAfterSelectLanguage} ensureBeforeAndAfterSelectLanguage */
 /** @typedef {import("../../../../../flux-json-api/src/Adapter/Api/JsonApi.mjs").JsonApi} JsonApi */
 /** @typedef {import("../../../Adapter/Language/Language.mjs").Language} Language */
 /** @typedef {import("../../../Adapter/Language/Languages.mjs").Languages} Languages */
 /** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
 /** @typedef {import("../../../Adapter/Language/Module.mjs").Module} Module */
 /** @typedef {import("../../../Adapter/Language/Placeholders.mjs").Placeholders} Placeholders */
-/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs").SelectLanguageButtonElement} SelectLanguageButtonElement */
-/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonsElement.mjs").SelectLanguageButtonsElement} SelectLanguageButtonsElement */
+/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 /** @typedef {import("../../../../../flux-settings-api/src/Adapter/Api/SettingsApi.mjs").SettingsApi} SettingsApi */
 
 export class LocalizationService {
@@ -210,39 +208,19 @@ export class LocalizationService {
     }
 
     /**
-     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
      * @param {afterSelectLanguage | null} after_select_language
-     * @returns {Promise<SelectLanguageButtonElement>}
+     * @returns {Promise<SelectLanguageElement>}
      */
-    async getSelectLanguageButtonElement(ensure_before_and_after_select_language = null, after_select_language = null) {
+    async getSelectLanguageElement(after_select_language = null) {
         if (this.#css_api === null) {
             throw new Error("Missing CssApi");
         }
 
-        return (await import("../Command/GetSelectLanguageButtonElementCommand.mjs")).GetSelectLanguageButtonElementCommand.new(
+        return (await import("../Command/GetSelectLanguageElementCommand.mjs")).GetSelectLanguageElementCommand.new(
             this.#css_api,
             this
         )
-            .getSelectLanguageButtonElement(
-                ensure_before_and_after_select_language,
-                after_select_language
-            );
-    }
-
-    /**
-     * @param {afterSelectLanguage | null} after_select_language
-     * @returns {Promise<SelectLanguageButtonsElement>}
-     */
-    async getSelectLanguageButtonsElement(after_select_language = null) {
-        if (this.#css_api === null) {
-            throw new Error("Missing CssApi");
-        }
-
-        return (await import("../Command/GetSelectLanguageButtonsElementCommand.mjs")).GetSelectLanguageButtonsElementCommand.new(
-            this.#css_api,
-            this
-        )
-            .getSelectLanguageButtonsElement(
+            .getSelectLanguageElement(
                 after_select_language
             );
     }
@@ -276,23 +254,13 @@ export class LocalizationService {
     }
 
     /**
-     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
-     * @param {boolean | null} force
      * @returns {Promise<void>}
      */
-    async selectLanguage(ensure_before_and_after_select_language = null, force = null) {
-        if (this.#css_api === null) {
-            throw new Error("Missing CssApi");
-        }
-
-        await (await import("../Command/SelectLanguageCommand.mjs")).SelectLanguageCommand.new(
-            this.#css_api,
+    async selectDefaultLanguage() {
+        await (await import("../Command/SelectDefaultLanguageCommand.mjs")).SelectDefaultLanguageCommand.new(
             this
         )
-            .selectLanguage(
-                ensure_before_and_after_select_language,
-                force
-            );
+            .selectDefaultLanguage();
     }
 
     /**

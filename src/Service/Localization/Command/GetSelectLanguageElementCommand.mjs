@@ -1,10 +1,9 @@
 /** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../Adapter/SelectLanguage/ensureBeforeAndAfterSelectLanguage.mjs").ensureBeforeAndAfterSelectLanguage} ensureBeforeAndAfterSelectLanguage */
 /** @typedef {import("../Port/LocalizationService.mjs").LocalizationService} LocalizationService */
-/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs").SelectLanguageButtonElement} SelectLanguageButtonElement */
+/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 
-export class GetSelectLanguageButtonElementCommand {
+export class GetSelectLanguageElementCommand {
     /**
      * @type {CssApi}
      */
@@ -17,7 +16,7 @@ export class GetSelectLanguageButtonElementCommand {
     /**
      * @param {CssApi} css_api
      * @param {LocalizationService} localization_service
-     * @returns {GetSelectLanguageButtonElementCommand}
+     * @returns {GetSelectLanguageElementCommand}
      */
     static new(css_api, localization_service) {
         return new this(
@@ -37,18 +36,20 @@ export class GetSelectLanguageButtonElementCommand {
     }
 
     /**
-     * @param {ensureBeforeAndAfterSelectLanguage | null} ensure_before_and_after_select_language
      * @param {afterSelectLanguage | null} after_select_language
-     * @returns {Promise<SelectLanguageButtonElement>}
+     * @returns {Promise<SelectLanguageElement>}
      */
-    async getSelectLanguageButtonElement(ensure_before_and_after_select_language = null, after_select_language = null) {
-        return (await import("../../../Adapter/SelectLanguage/SelectLanguageButtonElement.mjs")).SelectLanguageButtonElement.new(
+    async getSelectLanguageElement(after_select_language = null) {
+        return (await import("../../../Adapter/SelectLanguage/SelectLanguageElement.mjs")).SelectLanguageElement.new(
             this.#css_api,
             this.#localization_service,
-            async () => {
-                await this.#localization_service.selectLanguage(
-                    ensure_before_and_after_select_language,
-                    true
+            async language => {
+                await this.#localization_service.setLanguageSetting(
+                    language
+                );
+
+                await this.#localization_service.setDefaultLanguage(
+                    language
                 );
 
                 if (after_select_language !== null) {
