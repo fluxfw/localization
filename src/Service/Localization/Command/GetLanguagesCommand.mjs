@@ -40,23 +40,25 @@ export class GetLanguagesCommand {
         if (available_languages !== null) {
             if ("navigator" in globalThis) {
                 for (const language of navigator.languages) {
-                    if (!available_languages.includes(language)) {
+                    const available_language = available_languages.find(_available_language => _available_language.language === language || _available_language.fallback_for_languages.includes(language)) ?? null;
+
+                    if (available_language === null) {
                         continue;
                     }
 
-                    preferred[language] = await this.#localization_service.getLanguageName(
-                        language
+                    preferred[available_language.language] = await this.#localization_service.getLanguageName(
+                        available_language.language
                     );
                 }
             }
 
-            for (const language of available_languages) {
-                if (language in preferred) {
+            for (const available_language of available_languages) {
+                if (available_language.language in preferred) {
                     continue;
                 }
 
-                other[language] = await this.#localization_service.getLanguageName(
-                    language
+                other[available_language.language] = await this.#localization_service.getLanguageName(
+                    available_language.language
                 );
             }
         } else {

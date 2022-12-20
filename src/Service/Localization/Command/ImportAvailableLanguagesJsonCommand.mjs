@@ -1,3 +1,4 @@
+/** @typedef {import("../../../Adapter/Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
 /** @typedef {import("../../../../../flux-json-api/src/Adapter/Api/JsonApi.mjs").JsonApi} JsonApi */
 
 export class ImportAvailableLanguagesJsonCommand {
@@ -26,7 +27,7 @@ export class ImportAvailableLanguagesJsonCommand {
 
     /**
      * @param {string} localization_folder
-     * @returns {Promise<string[] | null>}
+     * @returns {Promise<AvailableLanguage[] | null>}
      */
     async importAvailableLanguagesJson(localization_folder) {
         let available_languages = null;
