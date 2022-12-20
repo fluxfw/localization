@@ -1,7 +1,11 @@
 [
-    "de",
-    "de-CH",
-    "de-DE",
-    "en",
-    "en-GB"
+    {
+        "language": "de-CH",
+        "fallback_for_languages": [
+            "de",
+            "de-AT",
+            "de-DE",
+            "de-LI"
+        ]
+    }
 ]

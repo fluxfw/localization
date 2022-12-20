@@ -1,4 +1,5 @@
 /** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
+/** @typedef {import("../../../Adapter/Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
 /** @typedef {import("../../../../../flux-json-api/src/Adapter/Api/JsonApi.mjs").JsonApi} JsonApi */
 /** @typedef {import("../../../Adapter/Language/Language.mjs").Language} Language */
@@ -70,10 +71,22 @@ export class LocalizationService {
     /**
      * @param {Localization} localization
      * @param {string | null} module
+     * @param {string | null} language
      * @returns {Promise<void>}
      */
-    async addLocalization(localization, module = null) {
-        this.#localizations.set(`${module ?? this.#default_module ?? ""}_${localization.language ?? ""}`, localization);
+    async addLocalization(localization, module = null, language = null) {
+        for (const _language of [
+            language,
+            localization.language
+        ]) {
+            const __language = _language ?? this.#default_language ?? "";
+
+            if (__language === "") {
+                continue;
+            }
+
+            this.#localizations.set(`${module ?? this.#default_module ?? ""}_${__language}`, localization);
+        }
     }
 
     /**
@@ -187,7 +200,8 @@ export class LocalizationService {
 
         await this.addLocalization(
             localization,
-            module
+            module,
+            language
         );
 
         return localization;
@@ -227,7 +241,7 @@ export class LocalizationService {
 
     /**
      * @param {string} localization_folder
-     * @returns {Promise<string[] | null>}
+     * @returns {Promise<AvailableLanguage[] | null>}
      */
     async importAvailableLanguagesJson(localization_folder) {
         return (await import("../Command/ImportAvailableLanguagesJsonCommand.mjs")).ImportAvailableLanguagesJsonCommand.new(

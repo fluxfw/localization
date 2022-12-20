@@ -37,14 +37,23 @@ export class LoadLocalizationCommand {
 
         for (const _language of language !== null ? [
             language
-        ] : navigator.languages) {
-            if (available_languages !== null && !available_languages.includes(_language)) {
-                continue;
+        ] : "navigator" in globalThis ? navigator.languages : []) {
+            let __language;
+            if (available_languages !== null) {
+                const available_language = available_languages.find(_available_language => _available_language.language === _language || _available_language.fallback_for_languages.includes(_language)) ?? null;
+
+                if (available_language === null) {
+                    continue;
+                }
+
+                __language = available_language.language;
+            } else {
+                __language = _language;
             }
 
             const localization = await this.#localization_service.importLocalizationJson(
                 localization_folder,
-                _language
+                __language
             );
 
             if (localization === null) {
@@ -56,7 +65,7 @@ export class LoadLocalizationCommand {
             }
 
             return {
-                language: _language,
+                language: __language,
                 localization
             };
         }
