@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2023-01-03-1
+
+Changes:
+
+- Fix fallback languages
+
 ## v2022-12-20-1
 
 Changes:
