@@ -75,17 +75,16 @@ export class LocalizationService {
      * @returns {Promise<void>}
      */
     async addLocalization(localization, module = null, language = null) {
-        for (const _language of [
-            language,
-            localization.language
-        ]) {
-            const __language = _language ?? this.#default_language ?? "";
+        const _module = module ?? this.#default_module ?? "";
 
-            if (__language === "") {
-                continue;
-            }
+        const _language = language ?? this.#default_language ?? "";
+        if (_language !== "") {
+            this.#localizations.set(`${_module}_${_language}`, localization);
+        }
 
-            this.#localizations.set(`${module ?? this.#default_module ?? ""}_${__language}`, localization);
+        const __language = localization.language ?? "";
+        if (__language !== "") {
+            this.#localizations.set(`${_module}_${__language}`, localization);
         }
     }
 
