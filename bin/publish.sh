@@ -5,7 +5,7 @@ set -e
 bin="`dirname "$0"`"
 root="$bin/.."
 
-#flux-js-lint "$root"
+#"$bin/lint.sh"
 
 tag-release "$root"
 create-github-release "$root"
