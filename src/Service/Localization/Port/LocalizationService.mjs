@@ -1,7 +1,7 @@
 /** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("../../../Adapter/Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
 /** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../../../flux-http-api/src/Adapter/Api/HttpApi.mjs").HttpApi} HttpApi */
+/** @typedef {import("../../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
 /** @typedef {import("../../../Adapter/Language/Language.mjs").Language} Language */
 /** @typedef {import("../../../Adapter/Language/Languages.mjs").Languages} Languages */
 /** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
@@ -24,9 +24,9 @@ export class LocalizationService {
      */
     #default_module = null;
     /**
-     * @type {HttpApi | null}
+     * @type {FluxHttpApi | null}
      */
-    #http_api;
+    #flux_http_api;
     /**
      * @type {Map<string, Localization>}
      */
@@ -42,27 +42,27 @@ export class LocalizationService {
 
     /**
      * @param {CssApi | null} css_api
-     * @param {HttpApi | null} http_api
+     * @param {FluxHttpApi | null} flux_http_api
      * @param {SettingsApi | null} settings_api
      * @returns {LocalizationService}
      */
-    static new(css_api = null, http_api = null, settings_api = null) {
+    static new(css_api = null, flux_http_api = null, settings_api = null) {
         return new this(
             css_api,
-            http_api,
+            flux_http_api,
             settings_api
         );
     }
 
     /**
      * @param {CssApi | null} css_api
-     * @param {HttpApi | null} http_api
+     * @param {FluxHttpApi | null} flux_http_api
      * @param {SettingsApi | null} settings_api
      * @private
      */
-    constructor(css_api, http_api, settings_api) {
+    constructor(css_api, flux_http_api, settings_api) {
         this.#css_api = css_api;
-        this.#http_api = http_api;
+        this.#flux_http_api = flux_http_api;
         this.#settings_api = settings_api;
         this.#localizations = new Map();
         this.#modules = new Map();
@@ -244,7 +244,7 @@ export class LocalizationService {
      */
     async importAvailableLanguagesJson(localization_folder) {
         return (await import("../Command/ImportAvailableLanguagesJsonCommand.mjs")).ImportAvailableLanguagesJsonCommand.new(
-            this.#http_api
+            this.#flux_http_api
         )
             .importAvailableLanguagesJson(
                 localization_folder
@@ -258,7 +258,7 @@ export class LocalizationService {
      */
     async importLocalizationJson(localization_folder, language) {
         return (await import("../Command/ImportLocalizationJsonCommand.mjs")).ImportLocalizationJsonCommand.new(
-            this.#http_api
+            this.#flux_http_api
         )
             .importLocalizationJson(
                 localization_folder,

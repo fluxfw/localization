@@ -1,27 +1,27 @@
-/** @typedef {import("../../../../../flux-http-api/src/Adapter/Api/HttpApi.mjs").HttpApi} HttpApi */
+/** @typedef {import("../../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
 
 export class ImportLocalizationJsonCommand {
     /**
-     * @type {HttpApi | null}
+     * @type {FluxHttpApi | null}
      */
-    #http_api;
+    #flux_http_api;
 
     /**
-     * @param {HttpApi | null} http_api
+     * @param {FluxHttpApi | null} flux_http_api
      * @returns {ImportLocalizationJsonCommand}
      */
-    static new(http_api = null) {
+    static new(flux_http_api = null) {
         return new this(
-            http_api
+            flux_http_api
         );
     }
 
     /**
-     * @param {HttpApi | null} http_api
+     * @param {FluxHttpApi | null} flux_http_api
      * @private
      */
-    constructor(http_api) {
-        this.#http_api = http_api;
+    constructor(flux_http_api) {
+        this.#flux_http_api = flux_http_api;
     }
 
     /**
@@ -37,17 +37,17 @@ export class ImportLocalizationJsonCommand {
             if (typeof process !== "undefined") {
                 localization = JSON.parse(await (await import("node:fs/promises")).readFile(language_json, "utf8"));
             } else {
-                if (this.#http_api === null) {
-                    throw new Error("Missing HttpApi");
+                if (this.#flux_http_api === null) {
+                    throw new Error("Missing FluxHttpApi");
                 }
 
-                localization = await (await this.#http_api.request(
-                    (await import("../../../../../flux-http-api/src/Adapter/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
+                localization = await (await this.#flux_http_api.request(
+                    (await import("../../../../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
                         new URL(language_json),
                         null,
                         null,
                         {
-                            [(await import("../../../../../flux-http-api/src/Adapter/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../../../../flux-http-api/src/Adapter/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
+                            [(await import("../../../../../flux-http-api/src/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../../../../flux-http-api/src/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
                         },
                         true
                     ))).body.json();

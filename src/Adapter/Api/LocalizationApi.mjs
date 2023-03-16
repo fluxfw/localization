@@ -2,7 +2,7 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_
 
 /** @typedef {import("../SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../../flux-http-api/src/Adapter/Api/HttpApi.mjs").HttpApi} HttpApi */
+/** @typedef {import("../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
 /** @typedef {import("../Language/Language.mjs").Language} Language */
 /** @typedef {import("../Language/Languages.mjs").Languages} Languages */
 /** @typedef {import("../../Service/Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
@@ -18,9 +18,9 @@ export class LocalizationApi {
      */
     #css_api;
     /**
-     * @type {HttpApi | null}
+     * @type {FluxHttpApi | null}
      */
-    #http_api;
+    #flux_http_api;
     /**
      * @type {LocalizationService | null}
      */
@@ -32,27 +32,27 @@ export class LocalizationApi {
 
     /**
      * @param {CssApi | null} css_api
-     * @param {HttpApi | null} http_api
+     * @param {FluxHttpApi | null} flux_http_api
      * @param {SettingsApi | null} settings_api
      * @returns {LocalizationApi}
      */
-    static new(css_api = null, http_api = null, settings_api = null) {
+    static new(css_api = null, flux_http_api = null, settings_api = null) {
         return new this(
             css_api,
-            http_api,
+            flux_http_api,
             settings_api
         );
     }
 
     /**
      * @param {CssApi | null} css_api
-     * @param {HttpApi | null} http_api
+     * @param {FluxHttpApi | null} flux_http_api
      * @param {SettingsApi | null} settings_api
      * @private
      */
-    constructor(css_api, http_api, settings_api) {
+    constructor(css_api, flux_http_api, settings_api) {
         this.#css_api = css_api;
-        this.#http_api = http_api;
+        this.#flux_http_api = flux_http_api;
         this.#settings_api = settings_api;
     }
 
@@ -168,7 +168,7 @@ export class LocalizationApi {
     async #getLocalizationService() {
         this.#localization_service ??= (await import("../../Service/Localization/Port/LocalizationService.mjs")).LocalizationService.new(
             this.#css_api,
-            this.#http_api,
+            this.#flux_http_api,
             this.#settings_api
         );
 
