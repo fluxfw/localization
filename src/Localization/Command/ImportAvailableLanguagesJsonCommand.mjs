@@ -42,12 +42,12 @@ export class ImportAvailableLanguagesJsonCommand {
                 }
 
                 available_languages = await (await this.#flux_http_api.request(
-                    (await import("../../../../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
+                    (await import("../../../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
                         new URL(available_languages_json_file),
                         null,
                         null,
                         {
-                            [(await import("../../../../../flux-http-api/src/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../../../../flux-http-api/src/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
+                            [(await import("../../../../flux-http-api/src/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../../../flux-http-api/src/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
                         },
                         true
                     ))).body.json();
