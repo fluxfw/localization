@@ -1,4 +1,4 @@
-/** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../Language/Localization.mjs").Localization} Localization */
 
 export class GetDirectionCommand {
     /**

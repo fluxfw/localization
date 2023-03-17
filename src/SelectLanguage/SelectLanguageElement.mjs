@@ -1,16 +1,16 @@
 import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_MODULE.mjs";
 
-/** @typedef {import("../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../Service/Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
+/** @typedef {import("../../../flux-css-api/src/FluxCssApi.mjs").FluxCssApi} FluxCssApi */
+/** @typedef {import("../Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
 /** @typedef {import("./setLanguage.mjs").setLanguage} setLanguage */
 
 const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
 
 export class SelectLanguageElement extends HTMLElement {
     /**
-     * @type {CssApi}
+     * @type {FluxCssApi}
      */
-    #css_api;
+    #flux_css_api;
     /**
      * @type {LocalizationService}
      */
@@ -29,34 +29,34 @@ export class SelectLanguageElement extends HTMLElement {
     #title_element;
 
     /**
-     * @param {CssApi} css_api
+     * @param {FluxCssApi} flux_css_api
      * @param {LocalizationService} localization_service
      * @param {setLanguage} set_language
      * @returns {SelectLanguageElement}
      */
-    static new(css_api, localization_service, set_language) {
+    static new(flux_css_api, localization_service, set_language) {
         return new this(
-            css_api,
+            flux_css_api,
             localization_service,
             set_language
         );
     }
 
     /**
-     * @param {CssApi} css_api
+     * @param {FluxCssApi} flux_css_api
      * @param {LocalizationService} localization_service
      * @param {setLanguage} set_language
      * @private
      */
-    constructor(css_api, localization_service, set_language) {
+    constructor(flux_css_api, localization_service, set_language) {
         super();
 
-        this.#css_api = css_api;
+        this.#flux_css_api = flux_css_api;
         this.#localization_service = localization_service;
         this.#set_language = set_language;
 
         this.#shadow = this.attachShadow({ mode: "closed" });
-        this.#css_api.importCssToRoot(
+        this.#flux_css_api.importCssToRoot(
             this.#shadow,
             `${__dirname}/${this.constructor.name}.css`
         );

@@ -1,7 +1,6 @@
-/** @typedef {import("../../../Adapter/Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
-/** @typedef {import("../../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
+/** @typedef {import("../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
 
-export class ImportAvailableLanguagesJsonCommand {
+export class ImportLocalizationJsonCommand {
     /**
      * @type {FluxHttpApi | null}
      */
@@ -9,7 +8,7 @@ export class ImportAvailableLanguagesJsonCommand {
 
     /**
      * @param {FluxHttpApi | null} flux_http_api
-     * @returns {ImportAvailableLanguagesJsonCommand}
+     * @returns {ImportLocalizationJsonCommand}
      */
     static new(flux_http_api = null) {
         return new this(
@@ -27,23 +26,24 @@ export class ImportAvailableLanguagesJsonCommand {
 
     /**
      * @param {string} localization_folder
-     * @returns {Promise<AvailableLanguage[] | null>}
+     * @param {string} language
+     * @returns {Promise<{[key: string]: string} | null>}
      */
-    async importAvailableLanguagesJson(localization_folder) {
-        const available_languages_json_file = `${localization_folder}/_available_languages.json`;
+    async importLocalizationJson(localization_folder, language) {
+        const language_json = `${localization_folder}/${language}.json`;
 
-        let available_languages = null;
+        let localization = null;
         try {
             if (typeof process !== "undefined") {
-                available_languages = JSON.parse(await (await import("node:fs/promises")).readFile(available_languages_json_file, "utf8"));
+                localization = JSON.parse(await (await import("node:fs/promises")).readFile(language_json, "utf8"));
             } else {
                 if (this.#flux_http_api === null) {
                     throw new Error("Missing FluxHttpApi");
                 }
 
-                available_languages = await (await this.#flux_http_api.request(
+                localization = await (await this.#flux_http_api.request(
                     (await import("../../../../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
-                        new URL(available_languages_json_file),
+                        new URL(language_json),
                         null,
                         null,
                         {
@@ -53,9 +53,9 @@ export class ImportAvailableLanguagesJsonCommand {
                     ))).body.json();
             }
         } catch (error) {
-            console.error(`Load available languages for ${localization_folder} failed (`, error, ")");
+            console.error(`Load language ${language} for ${localization_folder} failed (`, error, ")");
         }
 
-        return available_languages;
+        return localization;
     }
 }

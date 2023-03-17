@@ -1,37 +1,37 @@
-/** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
-/** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
+/** @typedef {import("../../SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
+/** @typedef {import("../../../../flux-css-api/src/FluxCssApi.mjs").FluxCssApi} FluxCssApi */
 /** @typedef {import("../Port/LocalizationService.mjs").LocalizationService} LocalizationService */
-/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
+/** @typedef {import("../../SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 
 export class GetSelectLanguageElementCommand {
     /**
-     * @type {CssApi}
+     * @type {FluxCssApi}
      */
-    #css_api;
+    #flux_css_api;
     /**
      * @type {LocalizationService}
      */
     #localization_service;
 
     /**
-     * @param {CssApi} css_api
+     * @param {FluxCssApi} flux_css_api
      * @param {LocalizationService} localization_service
      * @returns {GetSelectLanguageElementCommand}
      */
-    static new(css_api, localization_service) {
+    static new(flux_css_api, localization_service) {
         return new this(
-            css_api,
+            flux_css_api,
             localization_service
         );
     }
 
     /**
-     * @param {CssApi} css_api
+     * @param {FluxCssApi} flux_css_api
      * @param {LocalizationService} localization_service
      * @private
      */
-    constructor(css_api, localization_service) {
-        this.#css_api = css_api;
+    constructor(flux_css_api, localization_service) {
+        this.#flux_css_api = flux_css_api;
         this.#localization_service = localization_service;
     }
 
@@ -40,8 +40,8 @@ export class GetSelectLanguageElementCommand {
      * @returns {Promise<SelectLanguageElement>}
      */
     async getSelectLanguageElement(after_select_language = null) {
-        return (await import("../../../Adapter/SelectLanguage/SelectLanguageElement.mjs")).SelectLanguageElement.new(
-            this.#css_api,
+        return (await import("../../SelectLanguage/SelectLanguageElement.mjs")).SelectLanguageElement.new(
+            this.#flux_css_api,
             this.#localization_service,
             async language => {
                 await this.#localization_service.setLanguageSetting(

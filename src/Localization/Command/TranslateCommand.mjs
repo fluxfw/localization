@@ -1,5 +1,5 @@
-/** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
-/** @typedef {import("../../../Adapter/Language/Placeholders.mjs").Placeholders} Placeholders */
+/** @typedef {import("../../Language/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../Language/Placeholders.mjs").Placeholders} Placeholders */
 
 export class TranslateCommand {
     /**

@@ -1,20 +1,16 @@
-/** @typedef {import("../../../Adapter/SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
-/** @typedef {import("../../../Adapter/Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
-/** @typedef {import("../../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
-/** @typedef {import("../../../Adapter/Language/Language.mjs").Language} Language */
-/** @typedef {import("../../../Adapter/Language/Languages.mjs").Languages} Languages */
-/** @typedef {import("../../../Adapter/Language/Localization.mjs").Localization} Localization */
-/** @typedef {import("../../../Adapter/Language/Module.mjs").Module} Module */
-/** @typedef {import("../../../Adapter/Language/Placeholders.mjs").Placeholders} Placeholders */
-/** @typedef {import("../../../Adapter/SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
-/** @typedef {import("../../../../../flux-settings-api/src/Adapter/Api/SettingsApi.mjs").SettingsApi} SettingsApi */
+/** @typedef {import("../../SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
+/** @typedef {import("../../Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
+/** @typedef {import("../../../../flux-css-api/src/FluxCssApi.mjs").FluxCssApi} FluxCssApi */
+/** @typedef {import("../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
+/** @typedef {import("../../../../flux-settings-api/src/FluxSettingsApi.mjs").FluxSettingsApi} FluxSettingsApi */
+/** @typedef {import("../../Language/Language.mjs").Language} Language */
+/** @typedef {import("../../Language/Languages.mjs").Languages} Languages */
+/** @typedef {import("../../Language/Localization.mjs").Localization} Localization */
+/** @typedef {import("../../Language/Module.mjs").Module} Module */
+/** @typedef {import("../../Language/Placeholders.mjs").Placeholders} Placeholders */
+/** @typedef {import("../../SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 
 export class LocalizationService {
-    /**
-     * @type {CssApi | null}
-     */
-    #css_api;
     /**
      * @type {string | null}
      */
@@ -24,9 +20,17 @@ export class LocalizationService {
      */
     #default_module = null;
     /**
+     * @type {FluxCssApi | null}
+     */
+    #flux_css_api;
+    /**
      * @type {FluxHttpApi | null}
      */
     #flux_http_api;
+    /**
+     * @type {FluxSettingsApi | null}
+     */
+    #flux_settings_api;
     /**
      * @type {Map<string, Localization>}
      */
@@ -35,35 +39,31 @@ export class LocalizationService {
      * @type {Map<string, Module>}
      */
     #modules;
-    /**
-     * @type {SettingsApi | null}
-     */
-    #settings_api;
 
     /**
-     * @param {CssApi | null} css_api
+     * @param {FluxCssApi | null} flux_css_api
      * @param {FluxHttpApi | null} flux_http_api
-     * @param {SettingsApi | null} settings_api
+     * @param {FluxSettingsApi | null} flux_settings_api
      * @returns {LocalizationService}
      */
-    static new(css_api = null, flux_http_api = null, settings_api = null) {
+    static new(flux_css_api = null, flux_http_api = null, flux_settings_api = null) {
         return new this(
-            css_api,
+            flux_css_api,
             flux_http_api,
-            settings_api
+            flux_settings_api
         );
     }
 
     /**
-     * @param {CssApi | null} css_api
+     * @param {FluxCssApi | null} flux_css_api
      * @param {FluxHttpApi | null} flux_http_api
-     * @param {SettingsApi | null} settings_api
+     * @param {FluxSettingsApi | null} flux_settings_api
      * @private
      */
-    constructor(css_api, flux_http_api, settings_api) {
-        this.#css_api = css_api;
+    constructor(flux_css_api, flux_http_api, flux_settings_api) {
+        this.#flux_css_api = flux_css_api;
         this.#flux_http_api = flux_http_api;
-        this.#settings_api = settings_api;
+        this.#flux_settings_api = flux_settings_api;
         this.#localizations = new Map();
         this.#modules = new Map();
     }
@@ -163,12 +163,12 @@ export class LocalizationService {
      * @returns {Promise<string>}
      */
     async getLanguageSetting() {
-        if (this.#settings_api === null) {
-            throw new Error("Missing SettingsApi");
+        if (this.#flux_settings_api === null) {
+            throw new Error("Missing FluxSettingsApi");
         }
 
         return (await import("../Command/GetLanguageSettingCommand.mjs")).GetLanguageSettingCommand.new(
-            this.#settings_api
+            this.#flux_settings_api
         )
             .getLanguageSetting();
     }
@@ -225,12 +225,12 @@ export class LocalizationService {
      * @returns {Promise<SelectLanguageElement>}
      */
     async getSelectLanguageElement(after_select_language = null) {
-        if (this.#css_api === null) {
-            throw new Error("Missing CssApi");
+        if (this.#flux_css_api === null) {
+            throw new Error("Missing FluxCssApi");
         }
 
         return (await import("../Command/GetSelectLanguageElementCommand.mjs")).GetSelectLanguageElementCommand.new(
-            this.#css_api,
+            this.#flux_css_api,
             this
         )
             .getSelectLanguageElement(
@@ -297,12 +297,12 @@ export class LocalizationService {
      * @returns {Promise<void>}
      */
     async setLanguageSetting(language) {
-        if (this.#settings_api === null) {
-            throw new Error("Missing SettingsApi");
+        if (this.#flux_settings_api === null) {
+            throw new Error("Missing FluxSettingsApi");
         }
 
         await (await import("../Command/SetLanguageSettingCommand.mjs")).SetLanguageSettingCommand.new(
-            this.#settings_api
+            this.#flux_settings_api
         )
             .setLanguageSetting(
                 language

@@ -1,4 +1,4 @@
-/** @typedef {import("../../../Adapter/Language/Languages.mjs").Languages} Languages */
+/** @typedef {import("../../Language/Languages.mjs").Languages} Languages */
 /** @typedef {import("../Port/LocalizationService.mjs").LocalizationService} LocalizationService */
 
 export class GetLanguagesCommand {

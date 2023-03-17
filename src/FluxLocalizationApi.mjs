@@ -1,59 +1,59 @@
-import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_MODULE.mjs";
+import { LOCALIZATION_LOCALIZATION_MODULE } from "./Localization/_LOCALIZATION_MODULE.mjs";
 
-/** @typedef {import("../SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
-/** @typedef {import("../../../../flux-css-api/src/Adapter/Api/CssApi.mjs").CssApi} CssApi */
-/** @typedef {import("../../../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
-/** @typedef {import("../Language/Language.mjs").Language} Language */
-/** @typedef {import("../Language/Languages.mjs").Languages} Languages */
-/** @typedef {import("../../Service/Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
-/** @typedef {import("../Language/Placeholders.mjs").Placeholders} Placeholders */
-/** @typedef {import("../SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
-/** @typedef {import("../../../../flux-settings-api/src/Adapter/Api/SettingsApi.mjs").SettingsApi} SettingsApi */
+/** @typedef {import("./SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
+/** @typedef {import("../../flux-css-api/src/FluxCssApi.mjs").FluxCssApi} FluxCssApi */
+/** @typedef {import("../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
+/** @typedef {import("../../flux-settings-api/src/FluxSettingsApi.mjs").FluxSettingsApi} FluxSettingsApi */
+/** @typedef {import("./Language/Language.mjs").Language} Language */
+/** @typedef {import("./Language/Languages.mjs").Languages} Languages */
+/** @typedef {import("./Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
+/** @typedef {import("./Language/Placeholders.mjs").Placeholders} Placeholders */
+/** @typedef {import("./SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 
 const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
 
-export class LocalizationApi {
+export class FluxLocalizationApi {
     /**
-     * @type {CssApi | null}
+     * @type {FluxCssApi | null}
      */
-    #css_api;
+    #flux_css_api;
     /**
      * @type {FluxHttpApi | null}
      */
     #flux_http_api;
     /**
+     * @type {FluxSettingsApi | null}
+     */
+    #flux_settings_api;
+    /**
      * @type {LocalizationService | null}
      */
     #localization_service = null;
-    /**
-     * @type {SettingsApi | null}
-     */
-    #settings_api;
 
     /**
-     * @param {CssApi | null} css_api
+     * @param {FluxCssApi | null} flux_css_api
      * @param {FluxHttpApi | null} flux_http_api
-     * @param {SettingsApi | null} settings_api
-     * @returns {LocalizationApi}
+     * @param {FluxSettingsApi | null} flux_settings_api
+     * @returns {FluxLocalizationApi}
      */
-    static new(css_api = null, flux_http_api = null, settings_api = null) {
+    static new(flux_css_api = null, flux_http_api = null, flux_settings_api = null) {
         return new this(
-            css_api,
+            flux_css_api,
             flux_http_api,
-            settings_api
+            flux_settings_api
         );
     }
 
     /**
-     * @param {CssApi | null} css_api
+     * @param {FluxCssApi | null} flux_css_api
      * @param {FluxHttpApi | null} flux_http_api
-     * @param {SettingsApi | null} settings_api
+     * @param {FluxSettingsApi | null} flux_settings_api
      * @private
      */
-    constructor(css_api, flux_http_api, settings_api) {
-        this.#css_api = css_api;
+    constructor(flux_css_api, flux_http_api, flux_settings_api) {
+        this.#flux_css_api = flux_css_api;
         this.#flux_http_api = flux_http_api;
-        this.#settings_api = settings_api;
+        this.#flux_settings_api = flux_settings_api;
     }
 
     /**
@@ -61,14 +61,14 @@ export class LocalizationApi {
      */
     async init() {
         await this.addModule(
-            `${__dirname}/../Localization`,
+            `${__dirname}/Localization`,
             LOCALIZATION_LOCALIZATION_MODULE
         );
 
-        if (this.#css_api !== null) {
-            this.#css_api.importCssToRoot(
+        if (this.#flux_css_api !== null) {
+            this.#flux_css_api.importCssToRoot(
                 document,
-                `${__dirname}/../SelectLanguage/SelectLanguageVariables.css`
+                `${__dirname}/SelectLanguage/SelectLanguageVariables.css`
             );
         }
     }
@@ -166,10 +166,10 @@ export class LocalizationApi {
      * @returns {Promise<LocalizationService>}
      */
     async #getLocalizationService() {
-        this.#localization_service ??= (await import("../../Service/Localization/Port/LocalizationService.mjs")).LocalizationService.new(
-            this.#css_api,
+        this.#localization_service ??= (await import("./Localization/Port/LocalizationService.mjs")).LocalizationService.new(
+            this.#flux_css_api,
             this.#flux_http_api,
-            this.#settings_api
+            this.#flux_settings_api
         );
 
         return this.#localization_service;
