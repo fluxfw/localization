@@ -1,7 +1,7 @@
 import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_MODULE.mjs";
 
 /** @typedef {import("../../../flux-css-api/src/FluxCssApi.mjs").FluxCssApi} FluxCssApi */
-/** @typedef {import("../Localization/Port/LocalizationService.mjs").LocalizationService} LocalizationService */
+/** @typedef {import("../FluxLocalizationApi.mjs").FluxLocalizationApi} FluxLocalizationApi */
 /** @typedef {import("./setLanguage.mjs").setLanguage} setLanguage */
 
 const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
@@ -12,9 +12,9 @@ export class SelectLanguageElement extends HTMLElement {
      */
     #flux_css_api;
     /**
-     * @type {LocalizationService}
+     * @type {FluxLocalizationApi}
      */
-    #localization_service;
+    #flux_localization_api;
     /**
      * @type {setLanguage}
      */
@@ -30,29 +30,29 @@ export class SelectLanguageElement extends HTMLElement {
 
     /**
      * @param {FluxCssApi} flux_css_api
-     * @param {LocalizationService} localization_service
+     * @param {FluxLocalizationApi} flux_localization_api
      * @param {setLanguage} set_language
      * @returns {SelectLanguageElement}
      */
-    static new(flux_css_api, localization_service, set_language) {
+    static new(flux_css_api, flux_localization_api, set_language) {
         return new this(
             flux_css_api,
-            localization_service,
+            flux_localization_api,
             set_language
         );
     }
 
     /**
      * @param {FluxCssApi} flux_css_api
-     * @param {LocalizationService} localization_service
+     * @param {FluxLocalizationApi} flux_localization_api
      * @param {setLanguage} set_language
      * @private
      */
-    constructor(flux_css_api, localization_service, set_language) {
+    constructor(flux_css_api, flux_localization_api, set_language) {
         super();
 
         this.#flux_css_api = flux_css_api;
-        this.#localization_service = localization_service;
+        this.#flux_localization_api = flux_localization_api;
         this.#set_language = set_language;
 
         this.#shadow = this.attachShadow({ mode: "closed" });
@@ -70,13 +70,13 @@ export class SelectLanguageElement extends HTMLElement {
     async #render() {
         this.#title_element = document.createElement("div");
         this.#title_element.classList.add("title");
-        this.#title_element.innerText = await this.#localization_service.translate(
+        this.#title_element.innerText = await this.#flux_localization_api.translate(
             "Language",
             LOCALIZATION_LOCALIZATION_MODULE
         );
         this.#shadow.appendChild(this.#title_element);
 
-        const _language = await this.#localization_service.getLanguage();
+        const _language = await this.#flux_localization_api.getLanguage();
 
         const buttons_element = document.createElement("div");
         buttons_element.classList.add("buttons");
@@ -84,7 +84,7 @@ export class SelectLanguageElement extends HTMLElement {
         for (const [
             language,
             name
-        ] of Object.entries((await this.#localization_service.getLanguages()).all)) {
+        ] of Object.entries((await this.#flux_localization_api.getLanguages()).all)) {
             const button_element = document.createElement("button");
             button_element.type = "button";
 
@@ -106,7 +106,7 @@ export class SelectLanguageElement extends HTMLElement {
 
                 button_element.dataset.selected = true;
 
-                this.#title_element.innerText = await this.#localization_service.translate(
+                this.#title_element.innerText = await this.#flux_localization_api.translate(
                     "Language",
                     LOCALIZATION_LOCALIZATION_MODULE,
                     null,
