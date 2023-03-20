@@ -361,7 +361,7 @@ export class FluxLocalizationApi {
         };
 
         for (const __language of _language !== null ? [
-            language
+            _language
         ] : "navigator" in globalThis ? navigator.languages : []) {
             let ___language;
             if (available_languages !== null) {
