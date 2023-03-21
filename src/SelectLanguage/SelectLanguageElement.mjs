@@ -1,16 +1,16 @@
+import { flux_css_api } from "../../../flux-css-api/src/FluxCssApi.mjs";
 import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_MODULE.mjs";
 
-/** @typedef {import("../../../flux-css-api/src/FluxCssApi.mjs").FluxCssApi} FluxCssApi */
 /** @typedef {import("../FluxLocalizationApi.mjs").FluxLocalizationApi} FluxLocalizationApi */
 /** @typedef {import("./setLanguage.mjs").setLanguage} setLanguage */
 
 const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
 
+const css = await flux_css_api.import(
+    `${__dirname}/SelectLanguageElement.css`
+);
+
 export class SelectLanguageElement extends HTMLElement {
-    /**
-     * @type {FluxCssApi}
-     */
-    #flux_css_api;
     /**
      * @type {FluxLocalizationApi}
      */
@@ -29,36 +29,32 @@ export class SelectLanguageElement extends HTMLElement {
     #title_element;
 
     /**
-     * @param {FluxCssApi} flux_css_api
      * @param {FluxLocalizationApi} flux_localization_api
      * @param {setLanguage} set_language
      * @returns {SelectLanguageElement}
      */
-    static new(flux_css_api, flux_localization_api, set_language) {
+    static new(flux_localization_api, set_language) {
         return new this(
-            flux_css_api,
             flux_localization_api,
             set_language
         );
     }
 
     /**
-     * @param {FluxCssApi} flux_css_api
      * @param {FluxLocalizationApi} flux_localization_api
      * @param {setLanguage} set_language
      * @private
      */
-    constructor(flux_css_api, flux_localization_api, set_language) {
+    constructor(flux_localization_api, set_language) {
         super();
 
-        this.#flux_css_api = flux_css_api;
         this.#flux_localization_api = flux_localization_api;
         this.#set_language = set_language;
 
         this.#shadow = this.attachShadow({ mode: "closed" });
-        this.#flux_css_api.importCssToRoot(
+        flux_css_api.adopt(
             this.#shadow,
-            `${__dirname}/${this.constructor.name}.css`
+            css
         );
 
         this.#render();

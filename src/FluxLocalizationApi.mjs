@@ -3,7 +3,6 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "./Localization/_LOCALIZATION_M
 
 /** @typedef {import("./SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("./Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
-/** @typedef {import("../../flux-css-api/src/FluxCssApi.mjs").FluxCssApi} FluxCssApi */
 /** @typedef {import("../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
 /** @typedef {import("../../flux-settings-api/src/FluxSettingsApi.mjs").FluxSettingsApi} FluxSettingsApi */
 /** @typedef {import("./Language/Language.mjs").Language} Language */
@@ -15,6 +14,25 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "./Localization/_LOCALIZATION_M
 
 const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
 
+if (typeof process !== "undefined") {
+    let flux_css_api = null;
+    try {
+        ({
+            flux_css_api
+        } = await import("../../flux-css-api/src/FluxCssApi.mjs"));
+    } catch (error) {
+        //console.error(error);
+    }
+    if (flux_css_api !== null) {
+        flux_css_api.adopt(
+            document,
+            await flux_css_api.import(
+                `${__dirname}/SelectLanguage/SelectLanguageVariables.css`
+            )
+        );
+    }
+}
+
 export class FluxLocalizationApi {
     /**
      * @type {string | null}
@@ -24,10 +42,6 @@ export class FluxLocalizationApi {
      * @type {string | null}
      */
     #default_module = null;
-    /**
-     * @type {FluxCssApi | null}
-     */
-    #flux_css_api;
     /**
      * @type {FluxHttpApi | null}
      */
@@ -50,57 +64,41 @@ export class FluxLocalizationApi {
     #modules;
 
     /**
-     * @param {FluxCssApi | null} flux_css_api
      * @param {FluxHttpApi | null} flux_http_api
      * @param {FluxSettingsApi | null} flux_settings_api
      * @returns {FluxLocalizationApi}
      */
-    static new(flux_css_api = null, flux_http_api = null, flux_settings_api = null) {
+    static new(flux_http_api = null, flux_settings_api = null) {
         return new this(
-            flux_css_api,
             flux_http_api,
             flux_settings_api
         );
     }
 
     /**
-     * @param {FluxCssApi | null} flux_css_api
      * @param {FluxHttpApi | null} flux_http_api
      * @param {FluxSettingsApi | null} flux_settings_api
      * @private
      */
-    constructor(flux_css_api, flux_http_api, flux_settings_api) {
-        this.#flux_css_api = flux_css_api;
+    constructor(flux_http_api, flux_settings_api) {
         this.#flux_http_api = flux_http_api;
         this.#flux_settings_api = flux_settings_api;
         this.#import_jsons = new Map();
         this.#localizations = new Map();
         this.#modules = new Map();
-    }
 
-    /**
-     * @returns {Promise<void>}
-     */
-    async init() {
-        await this.addModule(
+        this.addModule(
             `${__dirname}/Localization`,
             LOCALIZATION_LOCALIZATION_MODULE
         );
-
-        if (this.#flux_css_api !== null) {
-            this.#flux_css_api.importCssToRoot(
-                document,
-                `${__dirname}/SelectLanguage/SelectLanguageVariables.css`
-            );
-        }
     }
 
     /**
      * @param {string} localization_folder
      * @param {string | null} module
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    async addModule(localization_folder, module = null) {
+    addModule(localization_folder, module = null) {
         const _module = module ?? this.#default_module ?? "";
 
         this.#modules.set(_module, {
@@ -208,19 +206,14 @@ export class FluxLocalizationApi {
      * @returns {Promise<SelectLanguageElement>}
      */
     async getSelectLanguageElement(after_select_language = null) {
-        if (this.#flux_css_api === null) {
-            throw new Error("Missing FluxCssApi");
-        }
-
         return (await import("./SelectLanguage/SelectLanguageElement.mjs")).SelectLanguageElement.new(
-            this.#flux_css_api,
             this,
             async language => {
                 await this.#setLanguageSetting(
                     language
                 );
 
-                await this.setDefaultLanguage(
+                this.setDefaultLanguage(
                     language
                 );
 
@@ -246,24 +239,24 @@ export class FluxLocalizationApi {
             );
         }
 
-        await this.setDefaultLanguage(
+        this.setDefaultLanguage(
             language
         );
     }
 
     /**
      * @param {string | null} default_language
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    async setDefaultLanguage(default_language = null) {
+    setDefaultLanguage(default_language = null) {
         this.#default_language = default_language;
     }
 
     /**
      * @param {string | null} default_module
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    async setDefaultModule(default_module = null) {
+    setDefaultModule(default_module = null) {
         this.#default_module = default_module;
     }
 
