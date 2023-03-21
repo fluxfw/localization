@@ -37,6 +37,10 @@ export class FluxLocalizationApi {
      */
     #flux_settings_api;
     /**
+     * @type {Map<string, *>}
+     */
+    #import_jsons;
+    /**
      * @type {Map<string, Localization>}
      */
     #localizations;
@@ -69,6 +73,7 @@ export class FluxLocalizationApi {
         this.#flux_css_api = flux_css_api;
         this.#flux_http_api = flux_http_api;
         this.#flux_settings_api = flux_settings_api;
+        this.#import_jsons = new Map();
         this.#localizations = new Map();
         this.#modules = new Map();
     }
@@ -103,7 +108,7 @@ export class FluxLocalizationApi {
         });
 
         Array.from(this.#localizations.keys()).filter(key => key.startsWith(`${_module}_`)).forEach(key => {
-            this.#modules.delete(key);
+            this.#localizations.delete(key);
         });
     }
 
@@ -275,9 +280,11 @@ export class FluxLocalizationApi {
             module,
             language
         )).localization?.[text] ?? "";
+
         if (_text === "") {
             _text = default_text ?? text;
         }
+
         return _text.replaceAll(/{([A-Za-z0-9_-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
     }
 
@@ -314,7 +321,10 @@ export class FluxLocalizationApi {
      * @returns {Promise<string>}
      */
     async #getLanguageName(language) {
-        return new Intl.DisplayNames(language, { languageDisplay: "standard", type: "language" }).of(language);
+        return new Intl.DisplayNames(language, {
+            languageDisplay: "standard",
+            type: "language"
+        }).of(language);
     }
 
     /**
@@ -393,6 +403,7 @@ export class FluxLocalizationApi {
                 language: ___language,
                 localization: __localization
             };
+            break;
         }
 
         await this.#addLocalization(
@@ -425,31 +436,52 @@ export class FluxLocalizationApi {
     async #importAvailableLanguagesJson(localization_folder) {
         const available_languages_json_file = `${localization_folder}/_available_languages.json`;
 
-        let available_languages = null;
         try {
-            if (typeof process !== "undefined") {
-                available_languages = JSON.parse(await (await import("node:fs/promises")).readFile(available_languages_json_file, "utf8"));
-            } else {
-                if (this.#flux_http_api === null) {
-                    throw new Error("Missing FluxHttpApi");
-                }
-
-                available_languages = await (await this.#flux_http_api.request(
-                    (await import("../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
-                        new URL(available_languages_json_file),
-                        null,
-                        null,
-                        {
-                            [(await import("../../flux-http-api/src/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../flux-http-api/src/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
-                        },
-                        true
-                    ))).body.json();
-            }
+            return await this.#importJson(
+                available_languages_json_file
+            );
         } catch (error) {
             console.error(`Load available languages for ${localization_folder} failed (`, error, ")");
+
+            return null;
+        }
+    }
+
+    /**
+     * @param {string} json_file
+     * @returns {Promise<*>}
+     */
+    async #importJson(json_file) {
+        let json = null;
+
+        if (this.#import_jsons.has(json_file)) {
+            json = structuredClone(this.#import_jsons.get(json_file) ?? null);
+        } else {
+            try {
+                if (typeof process !== "undefined") {
+                    json = JSON.parse(await (await import("node:fs/promises")).readFile(json_file, "utf8"));
+                } else {
+                    if (this.#flux_http_api === null) {
+                        throw new Error("Missing FluxHttpApi");
+                    }
+
+                    json = await (await this.#flux_http_api.request(
+                        (await import("../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
+                            new URL(json_file),
+                            null,
+                            null,
+                            {
+                                [(await import("../../flux-http-api/src/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../flux-http-api/src/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
+                            },
+                            true
+                        ))).body.json();
+                }
+            } finally {
+                this.#import_jsons.set(json_file, json);
+            }
         }
 
-        return available_languages;
+        return json;
     }
 
     /**
@@ -458,33 +490,17 @@ export class FluxLocalizationApi {
      * @returns {Promise<{[key: string]: string} | null>}
      */
     async #importLocalizationJson(localization_folder, language) {
-        const language_json = `${localization_folder}/${language}.json`;
+        const language_json_file = `${localization_folder}/${language}.json`;
 
-        let localization = null;
         try {
-            if (typeof process !== "undefined") {
-                localization = JSON.parse(await (await import("node:fs/promises")).readFile(language_json, "utf8"));
-            } else {
-                if (this.#flux_http_api === null) {
-                    throw new Error("Missing FluxHttpApi");
-                }
-
-                localization = await (await this.#flux_http_api.request(
-                    (await import("../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
-                        new URL(language_json),
-                        null,
-                        null,
-                        {
-                            [(await import("../../flux-http-api/src/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../flux-http-api/src/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
-                        },
-                        true
-                    ))).body.json();
-            }
+            return await this.#importJson(
+                language_json_file
+            );
         } catch (error) {
             console.error(`Load language ${language} for ${localization_folder} failed (`, error, ")");
-        }
 
-        return localization;
+            return null;
+        }
     }
 
     /**
