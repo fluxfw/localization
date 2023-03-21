@@ -14,7 +14,7 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "./Localization/_LOCALIZATION_M
 
 const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
 
-if (typeof process !== "undefined") {
+if (typeof process === "undefined") {
     let flux_css_api = null;
     try {
         ({
