@@ -4,10 +4,16 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_
 /** @typedef {import("../FluxLocalizationApi.mjs").FluxLocalizationApi} FluxLocalizationApi */
 /** @typedef {import("./setLanguage.mjs").setLanguage} setLanguage */
 
-const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
+flux_css_api.adopt(
+    document,
+    await flux_css_api.import(
+        `${import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))}/SelectLanguageVariables.css`
+    ),
+    true
+);
 
 const css = await flux_css_api.import(
-    `${__dirname}/SelectLanguageElement.css`
+    `${import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))}/SelectLanguageElement.css`
 );
 
 export class SelectLanguageElement extends HTMLElement {

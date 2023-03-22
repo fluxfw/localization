@@ -1,9 +1,9 @@
 [
     {
-        "language": "de-CH",
+        "language": "de",
         "fallback_for_languages": [
-            "de",
             "de-AT",
+            "de-CH",
             "de-DE",
             "de-LI"
         ]

@@ -12,27 +12,6 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "./Localization/_LOCALIZATION_M
 /** @typedef {import("./Language/Placeholders.mjs").Placeholders} Placeholders */
 /** @typedef {import("./SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 
-const __dirname = import.meta.url.substring(0, import.meta.url.lastIndexOf("/"));
-
-if (typeof process === "undefined") {
-    let flux_css_api = null;
-    try {
-        ({
-            flux_css_api
-        } = await import("../../flux-css-api/src/FluxCssApi.mjs"));
-    } catch (error) {
-        //console.error(error);
-    }
-    if (flux_css_api !== null) {
-        flux_css_api.adopt(
-            document,
-            await flux_css_api.import(
-                `${__dirname}/SelectLanguage/SelectLanguageVariables.css`
-            )
-        );
-    }
-}
-
 export class FluxLocalizationApi {
     /**
      * @type {string | null}
@@ -88,7 +67,7 @@ export class FluxLocalizationApi {
         this.#modules = new Map();
 
         this.addModule(
-            `${__dirname}/Localization`,
+            `${import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))}/Localization`,
             LOCALIZATION_LOCALIZATION_MODULE
         );
     }
