@@ -4,7 +4,7 @@
 }
 
 .title {
-    color: var(--select-language-title-color);
+    color: var(--flux-select-language-title-color);
     font-size: 20px;
     font-weight: bold;
 }
@@ -21,10 +21,10 @@
 
 button {
     -webkit-tap-highlight-color: transparent;
-    background-color: var(--select-language-button-background-color);
+    background-color: var(--flux-select-language-button-background-color);
     border: none;
     border-radius: 0px;
-    color: var(--select-language-button-foreground-color);
+    color: var(--flux-select-language-button-foreground-color);
     flex-grow: 0;
     flex-shrink: 0;
     font-size: 16px;
@@ -44,11 +44,11 @@ button:not([data-selected]) {
 
 button:not([data-selected]):hover,
 button:not([data-selected]):active {
-    background-color: var(--select-language-active-button-background-color);
-    color: var(--select-language-active-button-foreground-color);
+    background-color: var(--flux-select-language-active-button-background-color);
+    color: var(--flux-select-language-active-button-foreground-color);
 }
 
 button[data-selected] {
-    background-color: var(--select-language-selected-button-background-color);
-    color: var(--select-language-selected-button-foreground-color);
+    background-color: var(--flux-select-language-selected-button-background-color);
+    color: var(--flux-select-language-selected-button-foreground-color);
 }

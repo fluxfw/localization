@@ -1,0 +1,9 @@
+:root {
+    --flux-select-language-active-button-background-color: var(--flux-color-scheme-accent, #000000);
+    --flux-select-language-active-button-foreground-color: var(--flux-color-scheme-accent-foreground, #ffffff);
+    --flux-select-language-button-background-color: var(--flux-color-scheme-background, #ffffff);
+    --flux-select-language-button-foreground-color: var(--flux-color-scheme-foreground, #000000);
+    --flux-select-language-selected-button-background-color: var(--flux-color-scheme-accent, #000000);
+    --flux-select-language-selected-button-foreground-color: var(--flux-color-scheme-accent-foreground, #ffffff);
+    --flux-select-language-title-color: var(--flux-color-scheme-foreground, #000000);
+}

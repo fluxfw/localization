@@ -7,7 +7,7 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "../Localization/_LOCALIZATION_
 flux_css_api.adopt(
     document,
     await flux_css_api.import(
-        `${import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))}/SelectLanguageVariables.css`
+        `${import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))}/SelectLanguageElementVariables.css`
     ),
     true
 );
@@ -57,7 +57,10 @@ export class SelectLanguageElement extends HTMLElement {
         this.#flux_localization_api = flux_localization_api;
         this.#set_language = set_language;
 
-        this.#shadow = this.attachShadow({ mode: "closed" });
+        this.#shadow = this.attachShadow({
+            mode: "closed"
+        });
+
         flux_css_api.adopt(
             this.#shadow,
             css
