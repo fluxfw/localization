@@ -1,8 +1,8 @@
 import { LANGUAGE_SETTINGS_KEY } from "./Settings/LANGUAGE_SETTINGS_KEY.mjs";
-import { LOCALIZATION_LOCALIZATION_MODULE } from "./Localization/_LOCALIZATION_MODULE.mjs";
 
-/** @typedef {import("./SelectLanguage/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
+/** @typedef {import("./Language/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("./Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
+/** @typedef {import("../../flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
 /** @typedef {import("../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
 /** @typedef {import("../../flux-settings-api/src/FluxSettingsApi.mjs").FluxSettingsApi} FluxSettingsApi */
 /** @typedef {import("./Language/Language.mjs").Language} Language */
@@ -10,7 +10,6 @@ import { LOCALIZATION_LOCALIZATION_MODULE } from "./Localization/_LOCALIZATION_M
 /** @typedef {import("./Language/Localization.mjs").Localization} Localization */
 /** @typedef {import("./Language/Module.mjs").Module} Module */
 /** @typedef {import("./Language/Placeholders.mjs").Placeholders} Placeholders */
-/** @typedef {import("./SelectLanguage/SelectLanguageElement.mjs").SelectLanguageElement} SelectLanguageElement */
 
 export class FluxLocalizationApi {
     /**
@@ -65,11 +64,6 @@ export class FluxLocalizationApi {
         this.#import_jsons = new Map();
         this.#localizations = new Map();
         this.#modules = new Map();
-
-        this.addModule(
-            `${import.meta.url.substring(0, import.meta.url.lastIndexOf("/"))}/Localization`,
-            LOCALIZATION_LOCALIZATION_MODULE
-        );
     }
 
     /**
@@ -182,25 +176,43 @@ export class FluxLocalizationApi {
 
     /**
      * @param {afterSelectLanguage | null} after_select_language
-     * @returns {Promise<SelectLanguageElement>}
+     * @returns {Promise<FluxButtonGroupElement>}
      */
     async getSelectLanguageElement(after_select_language = null) {
-        return (await import("./SelectLanguage/SelectLanguageElement.mjs")).SelectLanguageElement.new(
-            this,
-            async language => {
-                await this.#setLanguageSetting(
-                    language
-                );
+        const _language = await this.getLanguage();
 
-                this.setDefaultLanguage(
-                    language
-                );
+        const {
+            FLUX_BUTTON_GROUP_INPUT_EVENT,
+            FluxButtonGroupElement
+        } = await import("../../flux-button-group/src/FluxButtonGroupElement.mjs");
 
-                if (after_select_language !== null) {
-                    after_select_language();
-                }
-            }
+        const flux_button_group_element = FluxButtonGroupElement.new(
+            Object.entries((await this.getLanguages()).all).map(([
+                language,
+                name
+            ]) => ({
+                label: name,
+                selected: language === _language.language,
+                title: name,
+                value: language
+            }))
         );
+
+        flux_button_group_element.addEventListener(FLUX_BUTTON_GROUP_INPUT_EVENT, async e => {
+            await this.#setLanguageSetting(
+                e.detail.value
+            );
+
+            this.setDefaultLanguage(
+                e.detail.value
+            );
+
+            if (after_select_language !== null) {
+                after_select_language();
+            }
+        });
+
+        return flux_button_group_element;
     }
 
     /**

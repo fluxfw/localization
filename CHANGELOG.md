@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2023-03-24-1
+
+Changes:
+
+- `flux-button-group`
+
 ## v2023-03-23-1
 
 Changes:
