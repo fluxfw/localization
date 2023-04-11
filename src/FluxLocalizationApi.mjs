@@ -139,7 +139,7 @@ export class FluxLocalizationApi {
             }
 
             for (const available_language of available_languages) {
-                if (available_language.language in preferred) {
+                if (Object.hasOwn(preferred, available_language.language)) {
                     continue;
                 }
 
