@@ -454,9 +454,7 @@ export class FluxLocalizationApi {
                             new URL(json_file),
                             null,
                             null,
-                            {
-                                [(await import("../../flux-http-api/src/Header/HEADER.mjs")).HEADER_ACCEPT]: (await import("../../flux-http-api/src/ContentType/CONTENT_TYPE.mjs")).CONTENT_TYPE_JSON
-                            },
+                            null,
                             true
                         ))).body.json();
                 }
