@@ -269,7 +269,7 @@ export class FluxLocalizationApi {
             _text = default_text ?? text;
         }
 
-        return _text.replaceAll(/{([A-Za-z0-9_-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
+        return _text.replaceAll(/{([\w-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
     }
 
     /**
