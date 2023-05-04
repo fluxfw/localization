@@ -182,7 +182,9 @@ export class FluxLocalizationApi {
         const _language = await this.getLanguage();
 
         const {
-            FLUX_BUTTON_GROUP_INPUT_EVENT,
+            FLUX_BUTTON_GROUP_EVENT_INPUT
+        } = await import("../../flux-button-group/src/FLUX_BUTTON_GROUP_EVENT.mjs");
+        const {
             FluxButtonGroupElement
         } = await import("../../flux-button-group/src/FluxButtonGroupElement.mjs");
 
@@ -198,7 +200,7 @@ export class FluxLocalizationApi {
             }))
         );
 
-        flux_button_group_element.addEventListener(FLUX_BUTTON_GROUP_INPUT_EVENT, async e => {
+        flux_button_group_element.addEventListener(FLUX_BUTTON_GROUP_EVENT_INPUT, async e => {
             await this.#setLanguageSetting(
                 e.detail.value
             );
