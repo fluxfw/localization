@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2023-07-17-1
+
+Changes:
+
+- General `SettingsStorage`
+
 ## v2023-05-04-1
 
 Changes:

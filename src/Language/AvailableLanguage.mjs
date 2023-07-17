@@ -1,3 +1,3 @@
 /**
- * @typedef {{language: string, fallback_for_languages: string[]}} AvailableLanguage
+ * @typedef {{language: string, "fallback-for-languages": string[]}} AvailableLanguage
  */

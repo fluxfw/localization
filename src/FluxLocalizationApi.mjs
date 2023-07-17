@@ -1,15 +1,15 @@
-import { LANGUAGE_SETTINGS_KEY } from "./Settings/LANGUAGE_SETTINGS_KEY.mjs";
+import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
 /** @typedef {import("./Language/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
 /** @typedef {import("./Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
 /** @typedef {import("../../flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
 /** @typedef {import("../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
-/** @typedef {import("../../flux-settings-api/src/FluxSettingsApi.mjs").FluxSettingsApi} FluxSettingsApi */
 /** @typedef {import("./Language/Language.mjs").Language} Language */
 /** @typedef {import("./Language/Languages.mjs").Languages} Languages */
 /** @typedef {import("./Language/Localization.mjs").Localization} Localization */
 /** @typedef {import("./Language/Module.mjs").Module} Module */
 /** @typedef {import("./Language/Placeholders.mjs").Placeholders} Placeholders */
+/** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 
 export class FluxLocalizationApi {
     /**
@@ -25,10 +25,6 @@ export class FluxLocalizationApi {
      */
     #flux_http_api;
     /**
-     * @type {FluxSettingsApi | null}
-     */
-    #flux_settings_api;
-    /**
      * @type {Map<string, *>}
      */
     #import_jsons;
@@ -40,42 +36,46 @@ export class FluxLocalizationApi {
      * @type {Map<string, Module>}
      */
     #modules;
+    /**
+     * @type {SettingsStorage | null}
+     */
+    #settings_storage;
 
     /**
      * @param {FluxHttpApi | null} flux_http_api
-     * @param {FluxSettingsApi | null} flux_settings_api
+     * @param {SettingsStorage | null} settings_storage
      * @returns {FluxLocalizationApi}
      */
-    static new(flux_http_api = null, flux_settings_api = null) {
+    static new(flux_http_api = null, settings_storage = null) {
         return new this(
             flux_http_api,
-            flux_settings_api
+            settings_storage
         );
     }
 
     /**
      * @param {FluxHttpApi | null} flux_http_api
-     * @param {FluxSettingsApi | null} flux_settings_api
+     * @param {SettingsStorage | null} settings_storage
      * @private
      */
-    constructor(flux_http_api, flux_settings_api) {
+    constructor(flux_http_api, settings_storage) {
         this.#flux_http_api = flux_http_api;
-        this.#flux_settings_api = flux_settings_api;
+        this.#settings_storage = settings_storage;
         this.#import_jsons = new Map();
         this.#localizations = new Map();
         this.#modules = new Map();
     }
 
     /**
-     * @param {string} localization_folder
+     * @param {string} folder
      * @param {string | null} module
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    addModule(localization_folder, module = null) {
+    async addModule(folder, module = null) {
         const _module = module ?? this.#default_module ?? "";
 
         this.#modules.set(_module, {
-            localization_folder
+            folder
         });
 
         Array.from(this.#localizations.keys()).filter(key => key.startsWith(`${_module}_`)).forEach(key => {
@@ -111,13 +111,13 @@ export class FluxLocalizationApi {
      */
     async getLanguages(module = null) {
         const {
-            localization_folder
+            folder
         } = await this.#getModule(
             module
         );
 
         const available_languages = await this.#importAvailableLanguagesJson(
-            localization_folder
+            folder
         );
 
         const preferred = {};
@@ -126,7 +126,7 @@ export class FluxLocalizationApi {
         if (available_languages !== null) {
             if ("navigator" in globalThis) {
                 for (const language of navigator.languages) {
-                    const available_language = available_languages.find(_available_language => _available_language.language === language || _available_language.fallback_for_languages.includes(language)) ?? null;
+                    const available_language = available_languages.find(_available_language => _available_language.language === language || _available_language["fallback-for-languages"].includes(language)) ?? null;
 
                     if (available_language === null) {
                         continue;
@@ -151,7 +151,7 @@ export class FluxLocalizationApi {
             if ("navigator" in globalThis) {
                 for (const language of navigator.languages) {
                     if (await this.#importLocalizationJson(
-                        localization_folder,
+                        folder,
                         language
                     ) === null) {
                         continue;
@@ -205,7 +205,7 @@ export class FluxLocalizationApi {
                 e.detail.value
             );
 
-            this.setDefaultLanguage(
+            await this.setDefaultLanguage(
                 e.detail.value
             );
 
@@ -232,24 +232,24 @@ export class FluxLocalizationApi {
             );
         }
 
-        this.setDefaultLanguage(
+        await this.setDefaultLanguage(
             language
         );
     }
 
     /**
      * @param {string | null} default_language
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    setDefaultLanguage(default_language = null) {
+    async setDefaultLanguage(default_language = null) {
         this.#default_language = default_language;
     }
 
     /**
      * @param {string | null} default_module
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    setDefaultModule(default_module = null) {
+    async setDefaultModule(default_module = null) {
         this.#default_module = default_module;
     }
 
@@ -317,12 +317,12 @@ export class FluxLocalizationApi {
      * @returns {Promise<string>}
      */
     async #getLanguageSetting() {
-        if (this.#flux_settings_api === null) {
-            throw new Error("Missing FluxSettingsApi");
+        if (this.#settings_storage === null) {
+            throw new Error("Missing SettingsStorage");
         }
 
-        return this.#flux_settings_api.get(
-            LANGUAGE_SETTINGS_KEY,
+        return this.#settings_storage.get(
+            SETTINGS_STORAGE_KEY_LANGUAGE,
             ""
         );
     }
@@ -342,13 +342,13 @@ export class FluxLocalizationApi {
         }
 
         const {
-            localization_folder
+            folder
         } = await this.#getModule(
             module
         );
 
         const available_languages = await this.#importAvailableLanguagesJson(
-            localization_folder
+            folder
         );
 
         let localization = {
@@ -361,7 +361,7 @@ export class FluxLocalizationApi {
         ] : "navigator" in globalThis ? navigator.languages : []) {
             let ___language;
             if (available_languages !== null) {
-                const available_language = available_languages.find(_available_language => _available_language.language === __language || _available_language.fallback_for_languages.includes(__language)) ?? null;
+                const available_language = available_languages.find(_available_language => _available_language.language === __language || _available_language["fallback-for-languages"].includes(__language)) ?? null;
 
                 if (available_language === null) {
                     continue;
@@ -373,7 +373,7 @@ export class FluxLocalizationApi {
             }
 
             const __localization = await this.#importLocalizationJson(
-                localization_folder,
+                folder,
                 ___language
             );
 
@@ -416,18 +416,18 @@ export class FluxLocalizationApi {
     }
 
     /**
-     * @param {string} localization_folder
+     * @param {string} folder
      * @returns {Promise<AvailableLanguage[] | null>}
      */
-    async #importAvailableLanguagesJson(localization_folder) {
-        const available_languages_json_file = `${localization_folder}/_available_languages.json`;
+    async #importAvailableLanguagesJson(folder) {
+        const available_languages_json_file = `${folder}/available_languages.json`;
 
         try {
             return await this.#importJson(
                 available_languages_json_file
             );
         } catch (error) {
-            console.error(`Load available languages for ${localization_folder} failed (`, error, ")");
+            console.error(`Load available languages for ${folder} failed (`, error, ")");
 
             return null;
         }
@@ -469,19 +469,19 @@ export class FluxLocalizationApi {
     }
 
     /**
-     * @param {string} localization_folder
+     * @param {string} folder
      * @param {string} language
      * @returns {Promise<{[key: string]: string} | null>}
      */
-    async #importLocalizationJson(localization_folder, language) {
-        const language_json_file = `${localization_folder}/${language}.json`;
+    async #importLocalizationJson(folder, language) {
+        const language_json_file = `${folder}/${language}.json`;
 
         try {
             return await this.#importJson(
                 language_json_file
             );
         } catch (error) {
-            console.error(`Load language ${language} for ${localization_folder} failed (`, error, ")");
+            console.error(`Load language ${language} for ${folder} failed (`, error, ")");
 
             return null;
         }
@@ -492,12 +492,12 @@ export class FluxLocalizationApi {
      * @returns {Promise<void>}
      */
     async #setLanguageSetting(language) {
-        if (this.#flux_settings_api === null) {
-            throw new Error("Missing FluxSettingsApi");
+        if (this.#settings_storage === null) {
+            throw new Error("Missing SettingsStorage");
         }
 
-        await this.#flux_settings_api.store(
-            LANGUAGE_SETTINGS_KEY,
+        await this.#settings_storage.store(
+            SETTINGS_STORAGE_KEY_LANGUAGE,
             language
         );
     }

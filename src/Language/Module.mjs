@@ -1,3 +1,3 @@
 /**
- * @typedef {{localization_folder: string}} Module
+ * @typedef {{folder: string}} Module
  */
