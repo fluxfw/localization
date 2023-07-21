@@ -1,3 +1,0 @@
-/**
- * @typedef {() => void} afterSelectLanguage
- */

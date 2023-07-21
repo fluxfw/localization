@@ -1,167 +1,120 @@
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
-/** @typedef {import("./Language/afterSelectLanguage.mjs").afterSelectLanguage} afterSelectLanguage */
-/** @typedef {import("./Language/AvailableLanguage.mjs").AvailableLanguage} AvailableLanguage */
 /** @typedef {import("../../flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
-/** @typedef {import("../../flux-http-api/src/FluxHttpApi.mjs").FluxHttpApi} FluxHttpApi */
-/** @typedef {import("./Language/Language.mjs").Language} Language */
-/** @typedef {import("./Language/Languages.mjs").Languages} Languages */
-/** @typedef {import("./Language/Localization.mjs").Localization} Localization */
-/** @typedef {import("./Language/Module.mjs").Module} Module */
-/** @typedef {import("./Language/Placeholders.mjs").Placeholders} Placeholders */
+/** @typedef {import("./Localization/Language.mjs").Language} Language */
+/** @typedef {import("./Localization/Languages.mjs").Languages} Languages */
+/** @typedef {import("./Localization/Localization.mjs").Localization} Localization */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 
 export class FluxLocalizationApi {
     /**
      * @type {string | null}
      */
-    #default_language = null;
+    #language;
     /**
-     * @type {string | null}
-     */
-    #default_module = null;
-    /**
-     * @type {FluxHttpApi | null}
-     */
-    #flux_http_api;
-    /**
-     * @type {Map<string, *>}
-     */
-    #import_jsons;
-    /**
-     * @type {Map<string, Localization>}
+     * @type {Map<string, Localization[]>}
      */
     #localizations;
-    /**
-     * @type {Map<string, Module>}
-     */
-    #modules;
     /**
      * @type {SettingsStorage | null}
      */
     #settings_storage;
+    /**
+     * @type {Map<string, [Localization, {[key: string]: string}]>}
+     */
+    #texts;
 
     /**
-     * @param {FluxHttpApi | null} flux_http_api
      * @param {SettingsStorage | null} settings_storage
-     * @returns {FluxLocalizationApi}
+     * @returns {Promise<FluxLocalizationApi>}
      */
-    static new(flux_http_api = null, settings_storage = null) {
-        return new this(
-            flux_http_api,
+    static async new(settings_storage = null) {
+        const flux_localization_api = new this(
             settings_storage
         );
+
+        flux_localization_api.#language = await flux_localization_api.#getLanguageSetting();
+
+        return flux_localization_api;
     }
 
     /**
-     * @param {FluxHttpApi | null} flux_http_api
      * @param {SettingsStorage | null} settings_storage
      * @private
      */
-    constructor(flux_http_api, settings_storage) {
-        this.#flux_http_api = flux_http_api;
+    constructor(settings_storage) {
         this.#settings_storage = settings_storage;
-        this.#import_jsons = new Map();
         this.#localizations = new Map();
-        this.#modules = new Map();
+        this.#texts = new Map();
     }
 
     /**
-     * @param {string} folder
-     * @param {string | null} module
+     * @param {string} module
+     * @param {Localization[]} localizations
      * @returns {Promise<void>}
      */
-    async addModule(folder, module = null) {
-        const _module = module ?? this.#default_module ?? "";
+    async addModule(module, localizations) {
+        if (this.#localizations.get(module) === localizations) {
+            return;
+        }
 
-        this.#modules.set(_module, {
-            folder
-        });
+        this.#localizations.set(module, localizations);
 
-        Array.from(this.#localizations.keys()).filter(key => key.startsWith(`${_module}_`)).forEach(key => {
-            this.#localizations.delete(key);
+        Array.from(this.#texts.keys()).filter(key => key.startsWith(`${module}_`)).forEach(key => {
+            this.#texts.delete(key);
         });
     }
 
     /**
-     * @param {string | null} module
+     * @param {string} module
      * @param {string | null} language
      * @returns {Promise<Language>}
      */
-    async getLanguage(module = null, language = null) {
-        const _language = (await this.#getLocalization(
+    async getLanguage(module, language = null) {
+        const [
+            localization
+        ] = await this.#getTexts(
             module,
             language
-        )).language ?? "en";
+        );
 
         return {
-            language: _language,
-            name: await this.#getLanguageName(
-                _language
-            ),
-            direction: await this.#getDirection(
-                _language
-            )
+            direction: localization.direction ?? "ltr",
+            label: localization.label,
+            language: localization.language
         };
     }
 
     /**
-     * @param {string | null} module
+     * @param {string} module
      * @returns {Promise<Languages>}
      */
-    async getLanguages(module = null) {
-        const {
-            folder
-        } = await this.#getModule(
+    async getLanguages(module) {
+        const localizations = await this.#getLocalizations(
             module
-        );
-
-        const available_languages = await this.#importAvailableLanguagesJson(
-            folder
         );
 
         const preferred = {};
         const other = {};
 
-        if (available_languages !== null) {
-            if ("navigator" in globalThis) {
-                for (const language of navigator.languages) {
-                    const available_language = available_languages.find(_available_language => _available_language.language === language || _available_language["fallback-for-languages"].includes(language)) ?? null;
+        if ("navigator" in globalThis) {
+            for (const language of navigator.languages) {
+                const localization = localizations.find(_localization => _localization.language === language || (_localization["fallback-languages"] ?? []).includes(language)) ?? null;
 
-                    if (available_language === null) {
-                        continue;
-                    }
-
-                    preferred[available_language.language] = await this.#getLanguageName(
-                        available_language.language
-                    );
-                }
-            }
-
-            for (const available_language of available_languages) {
-                if (Object.hasOwn(preferred, available_language.language)) {
+                if (localization === null) {
                     continue;
                 }
 
-                other[available_language.language] = await this.#getLanguageName(
-                    available_language.language
-                );
+                preferred[localization.language] = localization.label;
             }
-        } else {
-            if ("navigator" in globalThis) {
-                for (const language of navigator.languages) {
-                    if (await this.#importLocalizationJson(
-                        folder,
-                        language
-                    ) === null) {
-                        continue;
-                    }
+        }
 
-                    preferred[language] = await this.#getLanguageName(
-                        language
-                    );
-                }
+        for (const localization of localizations) {
+            if (Object.hasOwn(preferred, localization.language)) {
+                continue;
             }
+
+            other[localization.language] = localization.label;
         }
 
         return {
@@ -175,11 +128,14 @@ export class FluxLocalizationApi {
     }
 
     /**
-     * @param {afterSelectLanguage | null} after_select_language
+     * @param {string} module
+     * @param {(() => Promise<void>) | null} after_select_language
      * @returns {Promise<FluxButtonGroupElement>}
      */
-    async getSelectLanguageElement(after_select_language = null) {
-        const _language = await this.getLanguage();
+    async getSelectLanguageElement(module, after_select_language = null) {
+        const language = await this.getLanguage(
+            module
+        );
 
         const {
             FLUX_BUTTON_GROUP_EVENT_INPUT
@@ -189,28 +145,26 @@ export class FluxLocalizationApi {
         } = await import("../../flux-button-group/src/FluxButtonGroupElement.mjs");
 
         const flux_button_group_element = FluxButtonGroupElement.new(
-            Object.entries((await this.getLanguages()).all).map(([
-                language,
-                name
+            Object.entries((await this.getLanguages(
+                module
+            )).all).map(([
+                _language,
+                label
             ]) => ({
-                label: name,
-                selected: language === _language.language,
-                title: name,
-                value: language
+                label,
+                selected: _language === language.language,
+                title: label,
+                value: _language
             }))
         );
 
         flux_button_group_element.addEventListener(FLUX_BUTTON_GROUP_EVENT_INPUT, async e => {
-            await this.#setLanguageSetting(
-                e.detail.value
-            );
-
-            await this.setDefaultLanguage(
+            await this.setLanguage(
                 e.detail.value
             );
 
             if (after_select_language !== null) {
-                after_select_language();
+                await after_select_language();
             }
         });
 
@@ -218,273 +172,122 @@ export class FluxLocalizationApi {
     }
 
     /**
+     * @param {string} language
      * @returns {Promise<void>}
      */
-    async selectDefaultLanguage() {
-        let language = await this.#getLanguageSetting();
+    async setLanguage(language) {
+        this.#language = language;
 
-        if (language === "") {
-            ({
-                language
-            } = await this.getLanguage());
-            await this.#setLanguageSetting(
-                language
-            );
-        }
-
-        await this.setDefaultLanguage(
-            language
+        await this.#setLanguageSetting(
+            this.#language
         );
     }
 
     /**
-     * @param {string | null} default_language
-     * @returns {Promise<void>}
-     */
-    async setDefaultLanguage(default_language = null) {
-        this.#default_language = default_language;
-    }
-
-    /**
-     * @param {string | null} default_module
-     * @returns {Promise<void>}
-     */
-    async setDefaultModule(default_module = null) {
-        this.#default_module = default_module;
-    }
-
-    /**
-     * @param {string} text
-     * @param {string | null} module
-     * @param {Placeholders | null} placeholders
+     * @param {string} module
+     * @param {string} key
+     * @param {{[key: string]: string} | null} placeholders
      * @param {string | null} language
      * @param {string | null} default_text
      * @returns {Promise<string>}
      */
-    async translate(text, module = null, placeholders = null, language = null, default_text = null) {
-        let _text = (await this.#getLocalization(
+    async translate(module, key, placeholders = null, language = null, default_text = null) {
+        let text = (await this.#getTexts(
             module,
             language
-        )).localization?.[text] ?? "";
+        ))[1][key] ?? "";
 
-        if (_text === "") {
-            _text = default_text ?? text;
+        if (text === "") {
+            text = default_text ?? "";
         }
 
-        return _text.replaceAll(/{([\w-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
-    }
-
-    /**
-     * @param {Localization} localization
-     * @param {string | null} module
-     * @param {string | null} language
-     * @returns {Promise<void>}
-     */
-    async #addLocalization(localization, module = null, language = null) {
-        const _module = module ?? this.#default_module ?? "";
-
-        const _language = language ?? this.#default_language ?? "";
-        if (_language !== "") {
-            this.#localizations.set(`${_module}_${_language}`, localization);
+        if (text === "") {
+            text = `MISSING ${key}`;
         }
 
-        const __language = localization.language ?? "";
-        if (__language !== "") {
-            this.#localizations.set(`${_module}_${__language}`, localization);
-        }
+        return text.replaceAll(/{([\w-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
     }
 
     /**
-     * @param {string} language
-     * @returns {Promise<string>}
-     */
-    async #getDirection(language) {
-        return new Intl.Locale(language)?.textInfo?.direction ?? "ltr";
-    }
-
-    /**
-     * @param {string} language
-     * @returns {Promise<string>}
-     */
-    async #getLanguageName(language) {
-        return new Intl.DisplayNames(language, {
-            languageDisplay: "standard",
-            type: "language"
-        }).of(language);
-    }
-
-    /**
-     * @returns {Promise<string>}
+     * @returns {Promise<string | null>}
      */
     async #getLanguageSetting() {
-        if (this.#settings_storage === null) {
-            throw new Error("Missing SettingsStorage");
-        }
-
-        return this.#settings_storage.get(
-            SETTINGS_STORAGE_KEY_LANGUAGE,
-            ""
-        );
+        return this.#settings_storage?.get(
+            SETTINGS_STORAGE_KEY_LANGUAGE
+        ) ?? null;
     }
 
     /**
-     * @param {string | null} module
-     * @param {string | null} language
-     * @returns {Promise<Localization>}
+     * @param {string} module
+     * @returns {Promise<Localization[]>}
      */
-    async #getLocalization(module = null, language = null) {
-        const _language = language ?? this.#default_language;
+    async #getLocalizations(module) {
+        const localizations = this.#localizations.get(module) ?? null;
 
-        const _localization = this.#localizations.get(`${module ?? this.#default_module ?? ""}_${_language ?? ""}`) ?? null;
-
-        if (_localization !== null) {
-            return _localization;
+        if (localizations === null) {
+            throw new Error(`Missing localizations for module ${module}`);
         }
 
-        const {
-            folder
-        } = await this.#getModule(
+        return localizations;
+    }
+
+    /**
+     * @param {string} module
+     * @param {string | null} language
+     * @returns {Promise<[Localization, {[key: string]: string}]>}
+     */
+    async #getTexts(module, language = null) {
+        const _language = language ?? this.#language;
+
+        if (_language !== null) {
+            const texts = this.#texts.get(`${module}_${_language}`) ?? null;
+
+            if (texts !== null) {
+                return texts;
+            }
+        }
+
+        const localizations = await this.#getLocalizations(
             module
         );
 
-        const available_languages = await this.#importAvailableLanguagesJson(
-            folder
-        );
-
-        let localization = {
-            language: null,
-            localization: null
-        };
+        let localization = null;
 
         for (const __language of _language !== null ? [
             _language
         ] : "navigator" in globalThis ? navigator.languages : []) {
-            let ___language;
-            if (available_languages !== null) {
-                const available_language = available_languages.find(_available_language => _available_language.language === __language || _available_language["fallback-for-languages"].includes(__language)) ?? null;
+            localization = localizations.find(_localization => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language)) ?? null;
 
-                if (available_language === null) {
-                    continue;
-                }
-
-                ___language = available_language.language;
-            } else {
-                ___language = __language;
+            if (localization !== null) {
+                break;
             }
-
-            const __localization = await this.#importLocalizationJson(
-                folder,
-                ___language
-            );
-
-            if (__localization === null) {
-                if (available_languages !== null) {
-                    break;
-                } else {
-                    continue;
-                }
-            }
-
-            localization = {
-                language: ___language,
-                localization: __localization
-            };
-            break;
         }
 
-        await this.#addLocalization(
+        if (localization === null) {
+            localization = localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
+        }
+
+        if (localization === null) {
+            throw new Error(`Missing texts for module ${module}${_language !== null ? ` and language ${_language}` : ""}`);
+        }
+
+        if (this.#language === null) {
+            this.#language = localization.language;
+        }
+
+        const texts = [
             localization,
-            module,
-            language
-        );
+            await localization.getTexts()
+        ];
 
-        return localization;
-    }
-
-    /**
-     * @param {string | null} module
-     * @returns {Promise<Module>}
-     */
-    async #getModule(module = null) {
-        const _module = this.#modules.get(module ?? this.#default_module ?? "") ?? null;
-
-        if (_module === null) {
-            throw new Error(`Missing module ${module ?? this.#default_module ?? ""}`);
+        for (const __language of [
+            localization.language,
+            ...localization["fallback-languages"] ?? []
+        ]) {
+            this.#texts.set(`${module}_${__language}`, texts);
         }
 
-        return _module;
-    }
-
-    /**
-     * @param {string} folder
-     * @returns {Promise<AvailableLanguage[] | null>}
-     */
-    async #importAvailableLanguagesJson(folder) {
-        const available_languages_json_file = `${folder}/available_languages.json`;
-
-        try {
-            return await this.#importJson(
-                available_languages_json_file
-            );
-        } catch (error) {
-            console.error(`Load available languages for ${folder} failed (`, error, ")");
-
-            return null;
-        }
-    }
-
-    /**
-     * @param {string} json_file
-     * @returns {Promise<*>}
-     */
-    async #importJson(json_file) {
-        let json = null;
-
-        if (this.#import_jsons.has(json_file)) {
-            json = structuredClone(this.#import_jsons.get(json_file) ?? null);
-        } else {
-            try {
-                if (typeof process !== "undefined") {
-                    json = JSON.parse(await (await import("node:fs/promises")).readFile(json_file, "utf8"));
-                } else {
-                    if (this.#flux_http_api === null) {
-                        throw new Error("Missing FluxHttpApi");
-                    }
-
-                    json = await (await this.#flux_http_api.request(
-                        (await import("../../flux-http-api/src/Client/HttpClientRequest.mjs")).HttpClientRequest.new(
-                            new URL(json_file),
-                            null,
-                            null,
-                            null,
-                            true
-                        ))).body.json();
-                }
-            } finally {
-                this.#import_jsons.set(json_file, json);
-            }
-        }
-
-        return json;
-    }
-
-    /**
-     * @param {string} folder
-     * @param {string} language
-     * @returns {Promise<{[key: string]: string} | null>}
-     */
-    async #importLocalizationJson(folder, language) {
-        const language_json_file = `${folder}/${language}.json`;
-
-        try {
-            return await this.#importJson(
-                language_json_file
-            );
-        } catch (error) {
-            console.error(`Load language ${language} for ${folder} failed (`, error, ")");
-
-            return null;
-        }
+        return texts;
     }
 
     /**

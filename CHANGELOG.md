@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2023-07-21-1
+
+Changes:
+
+- General localizations
+
 ## v2023-07-17-1
 
 Changes:
