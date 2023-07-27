@@ -5,6 +5,7 @@ import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAG
 /** @typedef {import("./Localization/Languages.mjs").Languages} Languages */
 /** @typedef {import("./Localization/Localization.mjs").Localization} Localization */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
+/** @typedef {import("./StyleSheetManager/StyleSheetManager.mjs").StyleSheetManager} StyleSheetManager */
 
 export class FluxLocalizationApi {
     /**
@@ -20,17 +21,23 @@ export class FluxLocalizationApi {
      */
     #settings_storage;
     /**
+     * @type {StyleSheetManager | null}
+     */
+    #style_sheet_manager;
+    /**
      * @type {Map<string, [Localization, {[key: string]: string}]>}
      */
     #texts;
 
     /**
      * @param {SettingsStorage | null} settings_storage
+     * @param {StyleSheetManager | null} style_sheet_manager
      * @returns {Promise<FluxLocalizationApi>}
      */
-    static async new(settings_storage = null) {
+    static async new(settings_storage = null, style_sheet_manager = null) {
         const flux_localization_api = new this(
-            settings_storage
+            settings_storage,
+            style_sheet_manager
         );
 
         flux_localization_api.#language = await flux_localization_api.#getLanguageSetting();
@@ -40,10 +47,12 @@ export class FluxLocalizationApi {
 
     /**
      * @param {SettingsStorage | null} settings_storage
+     * @param {StyleSheetManager | null} style_sheet_manager
      * @private
      */
-    constructor(settings_storage) {
+    constructor(settings_storage, style_sheet_manager) {
         this.#settings_storage = settings_storage;
+        this.#style_sheet_manager = style_sheet_manager;
         this.#localizations = new Map();
         this.#texts = new Map();
     }
@@ -138,13 +147,11 @@ export class FluxLocalizationApi {
         );
 
         const {
-            FLUX_BUTTON_GROUP_EVENT_INPUT
-        } = await import("../../flux-button-group/src/FLUX_BUTTON_GROUP_EVENT.mjs");
-        const {
+            FLUX_BUTTON_GROUP_ELEMENT_EVENT_INPUT,
             FluxButtonGroupElement
         } = await import("../../flux-button-group/src/FluxButtonGroupElement.mjs");
 
-        const flux_button_group_element = FluxButtonGroupElement.new(
+        const flux_button_group_element = await FluxButtonGroupElement.new(
             Object.entries((await this.getLanguages(
                 module
             )).all).map(([
@@ -155,10 +162,11 @@ export class FluxLocalizationApi {
                 selected: _language === language.language,
                 title: label,
                 value: _language
-            }))
+            })),
+            this.#style_sheet_manager
         );
 
-        flux_button_group_element.addEventListener(FLUX_BUTTON_GROUP_EVENT_INPUT, async e => {
+        flux_button_group_element.addEventListener(FLUX_BUTTON_GROUP_ELEMENT_EVENT_INPUT, async e => {
             await this.setLanguage(
                 e.detail.value
             );
