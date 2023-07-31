@@ -1,3 +1,6 @@
+import { LOCALIZATION_KEY_SYSTEM_BASED } from "./Localization/LOCALIZATION_KEY.mjs";
+import { LOCALIZATION_MODULE } from "./Localization/LOCALIZATION_MODULE.mjs";
+import { LOCALIZATIONS } from "./Localization/LOCALIZATIONS.mjs";
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
 /** @typedef {import("../../flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
@@ -7,9 +10,11 @@ import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAG
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 /** @typedef {import("./StyleSheetManager/StyleSheetManager.mjs").StyleSheetManager} StyleSheetManager */
 
+export const LANGUAGE_SYSTEM = "system";
+
 export class FluxLocalizationApi {
     /**
-     * @type {string | null}
+     * @type {string}
      */
     #language;
     /**
@@ -21,36 +26,55 @@ export class FluxLocalizationApi {
      */
     #settings_storage;
     /**
+     * @type {boolean}
+     */
+    #show_system_language;
+    /**
      * @type {StyleSheetManager | null}
      */
     #style_sheet_manager;
+    /**
+     * @type {boolean}
+     */
+    #system_language;
     /**
      * @type {Map<string, [Localization, {[key: string]: string}]>}
      */
     #texts;
 
     /**
+     * @param {boolean | null} show_system_language
      * @param {SettingsStorage | null} settings_storage
      * @param {StyleSheetManager | null} style_sheet_manager
      * @returns {Promise<FluxLocalizationApi>}
      */
-    static async new(settings_storage = null, style_sheet_manager = null) {
+    static async new(show_system_language = null, settings_storage = null, style_sheet_manager = null) {
         const flux_localization_api = new this(
+            show_system_language ?? false,
             settings_storage,
             style_sheet_manager
         );
 
+        await flux_localization_api.addModule(
+            LOCALIZATION_MODULE,
+            LOCALIZATIONS
+        );
+
         flux_localization_api.#language = await flux_localization_api.#getLanguageSetting();
+
+        flux_localization_api.#system_language = flux_localization_api.#language === LANGUAGE_SYSTEM;
 
         return flux_localization_api;
     }
 
     /**
+     * @param {boolean} show_system_language
      * @param {SettingsStorage | null} settings_storage
      * @param {StyleSheetManager | null} style_sheet_manager
      * @private
      */
-    constructor(settings_storage, style_sheet_manager) {
+    constructor(show_system_language, settings_storage, style_sheet_manager) {
+        this.#show_system_language = show_system_language;
         this.#settings_storage = settings_storage;
         this.#style_sheet_manager = style_sheet_manager;
         this.#localizations = new Map();
@@ -90,7 +114,8 @@ export class FluxLocalizationApi {
         return {
             direction: localization.direction ?? "ltr",
             label: localization.label,
-            language: localization.language
+            language: localization.language,
+            system: this.#system_language
         };
     }
 
@@ -152,17 +177,33 @@ export class FluxLocalizationApi {
         } = await import("../../flux-button-group/src/FluxButtonGroupElement.mjs");
 
         const flux_button_group_element = await FluxButtonGroupElement.new(
-            Object.entries((await this.getLanguages(
-                module
-            )).all).map(([
-                _language,
-                label
-            ]) => ({
-                label,
-                selected: _language === language.language,
-                title: label,
-                value: _language
-            })),
+            [
+                ...this.#show_system_language ? [
+                    {
+                        label: await this.translate(
+                            LOCALIZATION_MODULE,
+                            LOCALIZATION_KEY_SYSTEM_BASED
+                        ),
+                        selected: language.system,
+                        title: await this.translate(
+                            LOCALIZATION_MODULE,
+                            LOCALIZATION_KEY_SYSTEM_BASED
+                        ),
+                        value: LANGUAGE_SYSTEM
+                    }
+                ] : [],
+                ...Object.entries((await this.getLanguages(
+                    module
+                )).all).map(([
+                    _language,
+                    label
+                ]) => ({
+                    label,
+                    selected: (this.#show_system_language ? !language.system : true) && _language === language.language,
+                    title: label,
+                    value: _language
+                }))
+            ],
             this.#style_sheet_manager
         );
 
@@ -185,6 +226,8 @@ export class FluxLocalizationApi {
      */
     async setLanguage(language) {
         this.#language = language;
+
+        this.#system_language = this.#language === LANGUAGE_SYSTEM;
 
         await this.#setLanguageSetting(
             this.#language
@@ -217,12 +260,12 @@ export class FluxLocalizationApi {
     }
 
     /**
-     * @returns {Promise<string | null>}
+     * @returns {Promise<string>}
      */
     async #getLanguageSetting() {
         return this.#settings_storage?.get(
             SETTINGS_STORAGE_KEY_LANGUAGE
-        ) ?? null;
+        ) ?? LANGUAGE_SYSTEM;
     }
 
     /**
@@ -247,7 +290,7 @@ export class FluxLocalizationApi {
     async #getTexts(module, language = null) {
         const _language = language ?? this.#language;
 
-        if (_language !== null) {
+        if (_language !== LANGUAGE_SYSTEM) {
             const texts = this.#texts.get(`${module}_${_language}`) ?? null;
 
             if (texts !== null) {
@@ -261,7 +304,7 @@ export class FluxLocalizationApi {
 
         let localization = null;
 
-        for (const __language of _language !== null ? [
+        for (const __language of _language !== LANGUAGE_SYSTEM ? [
             _language
         ] : "navigator" in globalThis ? navigator.languages : []) {
             localization = localizations.find(_localization => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language)) ?? null;
@@ -276,10 +319,10 @@ export class FluxLocalizationApi {
         }
 
         if (localization === null) {
-            throw new Error(`Missing texts for module ${module}${_language !== null ? ` and language ${_language}` : ""}`);
+            throw new Error(`Missing texts for module ${module}${_language !== LANGUAGE_SYSTEM ? ` and language ${_language}` : ""}`);
         }
 
-        if (this.#language === null) {
+        if (this.#language === LANGUAGE_SYSTEM) {
             this.#language = localization.language;
         }
 
