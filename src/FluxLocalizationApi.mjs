@@ -263,7 +263,7 @@ export class FluxLocalizationApi {
      * @returns {Promise<string>}
      */
     async #getLanguageSetting() {
-        return this.#settings_storage?.get(
+        return await this.#settings_storage?.get(
             SETTINGS_STORAGE_KEY_LANGUAGE
         ) ?? LANGUAGE_SYSTEM;
     }
