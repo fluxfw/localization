@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2023-08-07-2
+
+Changes:
+
+- System language
+
 ## v2023-08-07-1
 
 Changes:

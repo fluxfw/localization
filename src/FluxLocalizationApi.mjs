@@ -5,7 +5,6 @@ import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAG
 
 /** @typedef {import("../../flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
 /** @typedef {import("./Localization/Language.mjs").Language} Language */
-/** @typedef {import("./Localization/Languages.mjs").Languages} Languages */
 /** @typedef {import("./Localization/Localization.mjs").Localization} Localization */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 /** @typedef {import("./StyleSheetManager/StyleSheetManager.mjs").StyleSheetManager} StyleSheetManager */
@@ -114,50 +113,28 @@ export class FluxLocalizationApi {
     /**
      * @param {string} module
      * @param {boolean | null} exclude_system
-     * @returns {Promise<Languages>}
+     * @returns {Promise<{[key: string]: string}>}
      */
     async getLanguages(module, exclude_system = null) {
         const localizations = await this.#getLocalizations(
             module
         );
 
-        const preferred = {};
-        const other = {};
-
-        if ("navigator" in globalThis) {
-            for (const language of navigator.languages) {
-                const localization = localizations.find(_localization => _localization.language === language || (_localization["fallback-languages"] ?? []).includes(language)) ?? null;
-
-                if (localization === null) {
-                    continue;
-                }
-
-                preferred[localization.language] = await (localization.getLabel ?? (async () => localization.language))(
-                    this
-                );
-            }
-        }
+        const languages = {};
 
         const _exclude_system = exclude_system ?? false;
 
         for (const localization of localizations) {
-            if (Object.hasOwn(preferred, localization.language) || (_exclude_system && localization.language === LANGUAGE_SYSTEM)) {
+            if (_exclude_system && localization.language === LANGUAGE_SYSTEM) {
                 continue;
             }
 
-            other[localization.language] = await (localization.getLabel ?? (async () => localization.language))(
+            languages[localization.language] = await (localization.getLabel ?? (async () => localization.language))(
                 this
             );
         }
 
-        return {
-            preferred,
-            other,
-            all: {
-                ...preferred,
-                ...other
-            }
-        };
+        return languages;
     }
 
     /**
@@ -182,7 +159,7 @@ export class FluxLocalizationApi {
         } = await import("../../flux-button-group/src/FluxButtonGroupElement.mjs");
 
         const flux_button_group_element = await FluxButtonGroupElement.new(
-            Object.entries(languages.all).map(([
+            Object.entries(languages).map(([
                 _language,
                 label
             ]) => ({
