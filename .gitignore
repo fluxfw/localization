@@ -6,5 +6,5 @@
 !.dockerignore
 !.gitignore
 !CHANGELOG.md
-!metadata.json
 !README.md
+!version

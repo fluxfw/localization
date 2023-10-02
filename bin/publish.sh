@@ -7,5 +7,3 @@ root="$bin/.."
 
 tag-release "$root"
 create-github-release "$root"
-
-update-github-metadata "$root"
