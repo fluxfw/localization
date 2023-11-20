@@ -1,1 +1,1 @@
-export const LOCALIZATION_MODULE = "flux-localization-api";
+export const LOCALIZATION_MODULE = "flux-localization";

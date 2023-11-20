@@ -9,7 +9,7 @@ import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAG
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 /** @typedef {import("./StyleSheetManager/StyleSheetManager.mjs").StyleSheetManager} StyleSheetManager */
 
-export class FluxLocalizationApi {
+export class FluxLocalization {
     /**
      * @type {string}
      */
@@ -38,24 +38,24 @@ export class FluxLocalizationApi {
     /**
      * @param {SettingsStorage | null} settings_storage
      * @param {StyleSheetManager | null} style_sheet_manager
-     * @returns {Promise<FluxLocalizationApi>}
+     * @returns {Promise<FluxLocalization>}
      */
     static async new(settings_storage = null, style_sheet_manager = null) {
-        const flux_localization_api = new this(
+        const flux_localization = new this(
             settings_storage,
             style_sheet_manager
         );
 
-        await flux_localization_api.addModule(
+        await flux_localization.addModule(
             LOCALIZATION_MODULE,
             LOCALIZATIONS
         );
 
-        flux_localization_api.#language = await flux_localization_api.#getLanguageSetting();
+        flux_localization.#language = await flux_localization.#getLanguageSetting();
 
-        flux_localization_api.#system_language = flux_localization_api.#language === LANGUAGE_SYSTEM;
+        flux_localization.#system_language = flux_localization.#language === LANGUAGE_SYSTEM;
 
-        return flux_localization_api;
+        return flux_localization;
     }
 
     /**
@@ -207,10 +207,15 @@ export class FluxLocalizationApi {
      * @returns {Promise<string>}
      */
     async translate(module, key, placeholders = null, language = null, default_text = null) {
-        let text = (await this.#getTexts(
+        const [
+            localization,
+            texts
+        ] = await this.#getTexts(
             module,
             language
-        ))[1][key] ?? "";
+        );
+
+        let text = texts[key] ?? "";
 
         if (text === "") {
             text = default_text ?? "";
@@ -218,6 +223,20 @@ export class FluxLocalizationApi {
 
         if (text === "") {
             text = `MISSING ${key}`;
+
+            const _localization = localization["fallback-default"] ?? false ? localization : (await this.#getLocalizations(
+                module
+            )).find(__localization => __localization["fallback-default"] ?? false) ?? localization;
+
+            if (_localization.language !== language) {
+                return this.translate(
+                    module,
+                    key,
+                    placeholders,
+                    _localization.language,
+                    text
+                );
+            }
         }
 
         return text.replaceAll(/{([\w-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);

@@ -6,6 +6,13 @@ Changes:
 
 \-
 
+## v2023-11-20-1
+
+Changes:
+
+- Use text from fallback default localization if missing
+- Renamed to `flux-localization`
+
 ## v2023-09-25-1
 
 Changes:

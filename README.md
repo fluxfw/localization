@@ -1,3 +1,3 @@
-# flux-localization-api
+# flux-localization
 
 Localization
