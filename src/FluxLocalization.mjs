@@ -228,7 +228,7 @@ export class FluxLocalization {
                 module
             )).find(__localization => __localization["fallback-default"] ?? false) ?? localization;
 
-            if (_localization.language !== language) {
+            if (_localization.language !== localization.language) {
                 return this.translate(
                     module,
                     key,
