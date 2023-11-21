@@ -1,4 +1,5 @@
 import { LANGUAGE_SYSTEM } from "./Localization/SYSTEM_LOCALIZATION.mjs";
+import { LOCALIZATION_KEY_LANGUAGE } from "./Localization/LOCALIZATION_KEY.mjs";
 import { LOCALIZATION_MODULE } from "./Localization/LOCALIZATION_MODULE.mjs";
 import { LOCALIZATIONS } from "./Localization/LOCALIZATIONS.mjs";
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
@@ -196,9 +197,10 @@ export class FluxLocalization {
     /**
      * @param {string} module
      * @param {(() => Promise<void>) | null} after_select_language
+     * @param {boolean | null} no_language_label
      * @returns {Promise<FluxInputElement>}
      */
-    async getSelectLanguageInputElement(module, after_select_language = null) {
+    async getSelectLanguageInputElement(module, after_select_language = null, no_language_label = null) {
         const languages = await this.getLanguages(
             module
         );
@@ -217,7 +219,11 @@ export class FluxLocalization {
 
         const flux_input_element = await FluxInputElement.new(
             {
-                name: "language",
+                label: !(no_language_label ?? false) ? await this.translate(
+                    LOCALIZATION_MODULE,
+                    LOCALIZATION_KEY_LANGUAGE
+                ) : null,
+                name: SETTINGS_STORAGE_KEY_LANGUAGE,
                 options: Object.entries(languages).map(([
                     _language,
                     label
