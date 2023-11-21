@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2023-11-21-2
+
+Changes:
+
+- Add console warn if missing text
+
 ## v2023-11-21-1
 
 Changes:

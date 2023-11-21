@@ -96,7 +96,7 @@ export class FluxLocalization {
     async getLanguage(module, language = null) {
         const [
             localization
-        ] = await this.#getTexts(
+        ] = await this.#getLocalization(
             module,
             language
         );
@@ -126,7 +126,7 @@ export class FluxLocalization {
         const _exclude_system = exclude_system ?? false;
 
         const system_localization_label = !_exclude_system ? await this.#getLocalizationLabel(
-            (await this.#getTexts(
+            (await this.#getLocalization(
                 module,
                 LANGUAGE_SYSTEM
             ))[0]
@@ -273,7 +273,7 @@ export class FluxLocalization {
         const [
             localization,
             texts
-        ] = await this.#getTexts(
+        ] = await this.#getLocalization(
             module,
             language
         );
@@ -285,6 +285,8 @@ export class FluxLocalization {
         }
 
         if (text === "") {
+            console.warn(`Missing text ${key} for module ${module} and language ${localization.language}`);
+
             text = `MISSING ${key}`;
 
             const _localization = localization["fallback-default"] ?? false ? localization : (await this.#getLocalizations(
@@ -315,37 +317,11 @@ export class FluxLocalization {
     }
 
     /**
-     * @param {Localization} localization
-     * @param {string | null} system_localization_label
-     * @returns {Promise<string>}
-     */
-    async #getLocalizationLabel(localization, system_localization_label = null) {
-        return (localization.getLabel ?? (async () => localization.language))(
-            this,
-            system_localization_label
-        );
-    }
-
-    /**
-     * @param {string} module
-     * @returns {Promise<Localization[]>}
-     */
-    async #getLocalizations(module) {
-        const localizations = this.#localizations.get(module) ?? null;
-
-        if (localizations === null) {
-            throw new Error(`Missing localizations for module ${module}`);
-        }
-
-        return localizations;
-    }
-
-    /**
      * @param {string} module
      * @param {string | null} language
      * @returns {Promise<[Localization, {[key: string]: string}]>}
      */
-    async #getTexts(module, language = null) {
+    async #getLocalization(module, language = null) {
         const _language = language ?? this.#language;
 
         if (_language !== LANGUAGE_SYSTEM) {
@@ -377,7 +353,7 @@ export class FluxLocalization {
         }
 
         if (localization === null) {
-            throw new Error(`Missing texts for module ${module}${_language !== LANGUAGE_SYSTEM ? ` and language ${_language}` : ""}`);
+            throw new Error(`Missing localization for module ${module}${_language !== LANGUAGE_SYSTEM ? ` and language ${_language}` : ""}`);
         }
 
         if (this.#language === LANGUAGE_SYSTEM) {
@@ -403,6 +379,32 @@ export class FluxLocalization {
         }
 
         return _texts;
+    }
+
+    /**
+     * @param {Localization} localization
+     * @param {string | null} system_localization_label
+     * @returns {Promise<string>}
+     */
+    async #getLocalizationLabel(localization, system_localization_label = null) {
+        return (localization.getLabel ?? (async () => localization.language))(
+            this,
+            system_localization_label
+        );
+    }
+
+    /**
+     * @param {string} module
+     * @returns {Promise<Localization[]>}
+     */
+    async #getLocalizations(module) {
+        const localizations = this.#localizations.get(module) ?? null;
+
+        if (localizations === null) {
+            throw new Error(`Missing localizations for module ${module}`);
+        }
+
+        return localizations;
     }
 
     /**
