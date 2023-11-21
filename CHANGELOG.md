@@ -6,6 +6,13 @@ Changes:
 
 \-
 
+## v2023-11-21-1
+
+Changes:
+
+- Show current system language in selector
+- Input element selector variant
+
 ## v2023-11-20-2
 
 Changes:

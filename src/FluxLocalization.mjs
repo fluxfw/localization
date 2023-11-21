@@ -4,6 +4,7 @@ import { LOCALIZATIONS } from "./Localization/LOCALIZATIONS.mjs";
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
 /** @typedef {import("../../flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
+/** @typedef {import("../../flux-form/src/FluxInputElement.mjs").FluxInputElement} FluxInputElement */
 /** @typedef {import("./Localization/Language.mjs").Language} Language */
 /** @typedef {import("./Localization/Localization.mjs").Localization} Localization */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
@@ -102,8 +103,8 @@ export class FluxLocalization {
 
         return {
             direction: localization.direction ?? "ltr",
-            label: await (localization.getLabel ?? (async () => localization.language))(
-                this
+            label: await this.#getLocalizationLabel(
+                localization
             ),
             language: localization.language,
             system: this.#system_language
@@ -124,13 +125,21 @@ export class FluxLocalization {
 
         const _exclude_system = exclude_system ?? false;
 
+        const system_localization_label = !_exclude_system ? await this.#getLocalizationLabel(
+            (await this.#getTexts(
+                module,
+                LANGUAGE_SYSTEM
+            ))[0]
+        ) : null;
+
         for (const localization of localizations) {
             if (_exclude_system && localization.language === LANGUAGE_SYSTEM) {
                 continue;
             }
 
-            languages[localization.language] = await (localization.getLabel ?? (async () => localization.language))(
-                this
+            languages[localization.language] = await this.#getLocalizationLabel(
+                localization,
+                system_localization_label
             );
         }
 
@@ -142,7 +151,7 @@ export class FluxLocalization {
      * @param {(() => Promise<void>) | null} after_select_language
      * @returns {Promise<FluxButtonGroupElement>}
      */
-    async getSelectLanguageElement(module, after_select_language = null) {
+    async getSelectLanguageButtonGroupElement(module, after_select_language = null) {
         const languages = await this.getLanguages(
             module
         );
@@ -182,6 +191,60 @@ export class FluxLocalization {
         });
 
         return flux_button_group_element;
+    }
+
+    /**
+     * @param {string} module
+     * @param {(() => Promise<void>) | null} after_select_language
+     * @returns {Promise<FluxInputElement>}
+     */
+    async getSelectLanguageInputElement(module, after_select_language = null) {
+        const languages = await this.getLanguages(
+            module
+        );
+
+        const language = await this.getLanguage(
+            module
+        );
+
+        const {
+            FLUX_INPUT_ELEMENT_EVENT_INPUT,
+            FluxInputElement
+        } = await import("../../flux-form/src/FluxInputElement.mjs");
+        const {
+            INPUT_TYPE_SELECT
+        } = await import("../../flux-form/src/INPUT_TYPE.mjs");
+
+        const flux_input_element = await FluxInputElement.new(
+            {
+                name: "language",
+                options: Object.entries(languages).map(([
+                    _language,
+                    label
+                ]) => ({
+                    label,
+                    title: label,
+                    value: _language
+                })),
+                options_no_empty_value: true,
+                required: true,
+                type: INPUT_TYPE_SELECT,
+                value: Object.hasOwn(languages, LANGUAGE_SYSTEM) && language.system ? LANGUAGE_SYSTEM : language.language
+            },
+            this.#style_sheet_manager
+        );
+
+        flux_input_element.addEventListener(FLUX_INPUT_ELEMENT_EVENT_INPUT, async e => {
+            await this.setLanguage(
+                e.detail.value
+            );
+
+            if (after_select_language !== null) {
+                await after_select_language();
+            }
+        });
+
+        return flux_input_element;
     }
 
     /**
@@ -252,6 +315,18 @@ export class FluxLocalization {
     }
 
     /**
+     * @param {Localization} localization
+     * @param {string | null} system_localization_label
+     * @returns {Promise<string>}
+     */
+    async #getLocalizationLabel(localization, system_localization_label = null) {
+        return (localization.getLabel ?? (async () => localization.language))(
+            this,
+            system_localization_label
+        );
+    }
+
+    /**
      * @param {string} module
      * @returns {Promise<Localization[]>}
      */
@@ -309,7 +384,13 @@ export class FluxLocalization {
             this.#language = localization.language;
         }
 
-        const texts = [
+        const texts = this.#texts.get(`${module}_${localization.language}`) ?? null;
+
+        if (texts !== null) {
+            return texts;
+        }
+
+        const _texts = [
             localization,
             await (localization.getTexts ?? (async () => ({})))()
         ];
@@ -318,10 +399,10 @@ export class FluxLocalization {
             localization.language,
             ...localization["fallback-languages"] ?? []
         ]) {
-            this.#texts.set(`${module}_${__language}`, texts);
+            this.#texts.set(`${module}_${__language}`, _texts);
         }
 
-        return texts;
+        return _texts;
     }
 
     /**
