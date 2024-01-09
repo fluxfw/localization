@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2024-01-09-1
+
+Changes:
+
+- Early return if non `after_select_language`
+
 ## v2023-11-21-3
 
 Changes:

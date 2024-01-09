@@ -186,9 +186,11 @@ export class FluxLocalization {
                 e.detail.value
             );
 
-            if (after_select_language !== null) {
-                await after_select_language();
+            if (after_select_language === null) {
+                return;
             }
+
+            await after_select_language();
         });
 
         return flux_button_group_element;
