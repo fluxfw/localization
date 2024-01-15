@@ -2,8 +2,8 @@
 
 set -e
 
-bin="`dirname "$0"`"
-root="$bin/.."
+bin_folder="`dirname "$0"`"
+root_folder="$bin_folder/.."
 
-tag-release "$root"
-create-github-release "$root"
+tag-release "$root_folder"
+create-github-release "$root_folder"

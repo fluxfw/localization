@@ -2,9 +2,9 @@
 
 set -e
 
-bin="`dirname "$0"`"
-root="$bin/.."
+bin_folder="`dirname "$0"`"
+root_folder="$bin_folder/.."
 
-#"$bin/lint.sh"
+#"$bin_folder/lint.sh"
 
-update-release-version "$root"
+update-release-version "$root_folder"

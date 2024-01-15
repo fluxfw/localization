@@ -4,8 +4,8 @@ import { LOCALIZATION_MODULE } from "./Localization/LOCALIZATION_MODULE.mjs";
 import { LOCALIZATIONS } from "./Localization/LOCALIZATIONS.mjs";
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
-/** @typedef {import("../../flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
-/** @typedef {import("../../flux-form/src/FluxInputElement.mjs").FluxInputElement} FluxInputElement */
+/** @typedef {import("flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
+/** @typedef {import("flux-form/src/FluxInputElement.mjs").FluxInputElement} FluxInputElement */
 /** @typedef {import("./Localization/Language.mjs").Language} Language */
 /** @typedef {import("./Localization/Localization.mjs").Localization} Localization */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
@@ -166,7 +166,7 @@ export class FluxLocalization {
         const {
             FLUX_BUTTON_GROUP_ELEMENT_EVENT_INPUT,
             FluxButtonGroupElement
-        } = await import("../../flux-button-group/src/FluxButtonGroupElement.mjs");
+        } = await import("flux-button-group/src/FluxButtonGroupElement.mjs");
 
         const flux_button_group_element = await FluxButtonGroupElement.new(
             Object.entries(languages).map(([
@@ -214,10 +214,10 @@ export class FluxLocalization {
         const {
             FLUX_INPUT_ELEMENT_EVENT_INPUT,
             FluxInputElement
-        } = await import("../../flux-form/src/FluxInputElement.mjs");
+        } = await import("flux-form/src/FluxInputElement.mjs");
         const {
             INPUT_TYPE_SELECT
-        } = await import("../../flux-form/src/INPUT_TYPE.mjs");
+        } = await import("flux-form/src/INPUT_TYPE.mjs");
 
         const flux_input_element = await FluxInputElement.new(
             {

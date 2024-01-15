@@ -2,7 +2,7 @@
 
 set -e
 
-bin="`dirname "$0"`"
-root="$bin/.."
+bin_folder="`dirname "$0"`"
+root_folder="$bin_folder/.."
 
-flux-js-lint "$root"
+flux-js-lint "$root_folder"

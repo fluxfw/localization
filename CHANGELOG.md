@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2024-01-15-1
+
+Changes:
+
+- Load libraries using NodeJS's module resolver
+
 ## v2024-01-09-1
 
 Changes:
