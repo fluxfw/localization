@@ -3,7 +3,6 @@
 !bin/**
 !src
 !src/**
-!.dockerignore
 !.gitignore
 !CHANGELOG.md
 !README.md
