@@ -293,7 +293,7 @@ export class FluxLocalization {
         }
 
         if (text === "") {
-            console.warn(`Missing text ${key} for module ${module} and language ${localization.language}`);
+            console.warn(`Missing text ${key} for module ${module} and language ${localization.language}!`);
 
             text = `MISSING ${key}`;
 
@@ -361,7 +361,7 @@ export class FluxLocalization {
         }
 
         if (localization === null) {
-            throw new Error(`Missing localization for module ${module}${_language !== LANGUAGE_SYSTEM ? ` and language ${_language}` : ""}`);
+            throw new Error(`Missing localization for module ${module}${_language !== LANGUAGE_SYSTEM ? ` and language ${_language}` : ""}!`);
         }
 
         if (this.#language === LANGUAGE_SYSTEM) {
@@ -409,7 +409,7 @@ export class FluxLocalization {
         const localizations = this.#localizations.get(module) ?? null;
 
         if (localizations === null) {
-            throw new Error(`Missing localizations for module ${module}`);
+            throw new Error(`Missing localizations for module ${module}!`);
         }
 
         return localizations;
@@ -421,7 +421,7 @@ export class FluxLocalization {
      */
     async #setLanguageSetting(language) {
         if (this.#settings_storage === null) {
-            throw new Error("Missing SettingsStorage");
+            throw new Error("Missing SettingsStorage!");
         }
 
         await this.#settings_storage.store(
