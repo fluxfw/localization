@@ -6,6 +6,13 @@ Changes:
 
 \-
 
+## v2024-04-15-1
+
+Changes:
+
+- Remove direct used bundled localizations
+- Rename `getLabel` to `label` and `getTexts` to `texts`
+
 ## v2024-04-03-1
 
 Changes:

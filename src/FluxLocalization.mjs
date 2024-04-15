@@ -1,7 +1,6 @@
 import { LANGUAGE_SYSTEM } from "./Localization/SYSTEM_LOCALIZATION.mjs";
 import { LOCALIZATION_KEY_LANGUAGE } from "./Localization/LOCALIZATION_KEY.mjs";
 import { LOCALIZATION_MODULE } from "./Localization/LOCALIZATION_MODULE.mjs";
-import { LOCALIZATIONS } from "./Localization/LOCALIZATIONS.mjs";
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
 /** @typedef {import("flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
@@ -48,11 +47,6 @@ export class FluxLocalization {
             style_sheet_manager
         );
 
-        await flux_localization.addModule(
-            LOCALIZATION_MODULE,
-            LOCALIZATIONS
-        );
-
         flux_localization.#language = await flux_localization.#getLanguageSetting();
 
         flux_localization.#system_language = flux_localization.#language === LANGUAGE_SYSTEM;
@@ -78,15 +72,11 @@ export class FluxLocalization {
      * @returns {Promise<void>}
      */
     async addModule(module, localizations) {
-        if (this.#localizations.get(module) === localizations) {
-            return;
+        if (this.#localizations.has(module)) {
+            throw new Error(`Module ${module} already exists!`);
         }
 
         this.#localizations.set(module, localizations);
-
-        Array.from(this.#texts.keys()).filter(key => key.startsWith(`${module}_`)).forEach(key => {
-            this.#texts.delete(key);
-        });
     }
 
     /**
@@ -376,7 +366,7 @@ export class FluxLocalization {
 
         const _texts = [
             localization,
-            await (localization.getTexts ?? (async () => ({})))()
+            (typeof localization.texts === "function" ? await localization.texts() : localization.texts) ?? {}
         ];
 
         for (const __language of [
@@ -395,10 +385,10 @@ export class FluxLocalization {
      * @returns {Promise<string>}
      */
     async #getLocalizationLabel(localization, system_localization_label = null) {
-        return (localization.getLabel ?? (async () => localization.language))(
+        return (typeof localization.label === "function" ? await localization.label(
             this,
             system_localization_label
-        );
+        ) : localization.label) ?? localization.language;
     }
 
     /**
