@@ -16,7 +16,7 @@ export class FluxLocalization {
      */
     #language;
     /**
-     * @type {Map<string, Localization[]>}
+     * @type {Localization[]}
      */
     #localizations;
     /**
@@ -32,7 +32,7 @@ export class FluxLocalization {
      */
     #system_language;
     /**
-     * @type {Map<string, [Localization, {[key: string]: string}]>}
+     * @type {{[key: string]: [Localization, {[key: string]: {[key: string]: string}}]}}
      */
     #texts;
 
@@ -62,33 +62,30 @@ export class FluxLocalization {
     constructor(settings_storage, style_sheet_manager) {
         this.#settings_storage = settings_storage;
         this.#style_sheet_manager = style_sheet_manager;
-        this.#localizations = new Map();
-        this.#texts = new Map();
+        this.#localizations = [];
+        this.#texts = {};
     }
 
     /**
-     * @param {string} module
-     * @param {Localization[]} localizations
+     * @param {Localization} localization
      * @returns {Promise<void>}
      */
-    async addModule(module, localizations) {
-        if (this.#localizations.has(module)) {
-            throw new Error(`Module ${module} already exists!`);
+    async addLocalization(localization) {
+        if (this.#localizations.some(_localization => _localization.language === localization.language || (_localization["fallback-languages"] ?? []).includes(localization.language))) {
+            throw new Error(`Localization ${localization.language} already exists!`);
         }
 
-        this.#localizations.set(module, localizations);
+        this.#localizations.push(localization);
     }
 
     /**
-     * @param {string} module
      * @param {string | null} language
      * @returns {Promise<Language>}
      */
-    async getLanguage(module, language = null) {
+    async getLanguage(language = null) {
         const [
             localization
         ] = await this.#getLocalization(
-            module,
             language
         );
 
@@ -103,27 +100,21 @@ export class FluxLocalization {
     }
 
     /**
-     * @param {string} module
      * @param {boolean | null} exclude_system
      * @returns {Promise<{[key: string]: string}>}
      */
-    async getLanguages(module, exclude_system = null) {
-        const localizations = await this.#getLocalizations(
-            module
-        );
-
+    async getLanguages(exclude_system = null) {
         const languages = {};
 
         const _exclude_system = exclude_system ?? false;
 
         const system_localization_label = !_exclude_system ? await this.#getLocalizationLabel(
             (await this.#getLocalization(
-                module,
                 LANGUAGE_SYSTEM
             ))[0]
         ) : null;
 
-        for (const localization of localizations) {
+        for (const localization of this.#localizations) {
             if (_exclude_system && localization.language === LANGUAGE_SYSTEM) {
                 continue;
             }
@@ -138,18 +129,13 @@ export class FluxLocalization {
     }
 
     /**
-     * @param {string} module
      * @param {(() => Promise<void>) | null} after_select_language
      * @returns {Promise<FluxButtonGroupElement>}
      */
-    async getSelectLanguageButtonGroupElement(module, after_select_language = null) {
-        const languages = await this.getLanguages(
-            module
-        );
+    async getSelectLanguageButtonGroupElement(after_select_language = null) {
+        const languages = await this.getLanguages();
 
-        const language = await this.getLanguage(
-            module
-        );
+        const language = await this.getLanguage();
 
         const show_system_language = Object.hasOwn(languages, LANGUAGE_SYSTEM);
 
@@ -187,19 +173,14 @@ export class FluxLocalization {
     }
 
     /**
-     * @param {string} module
      * @param {(() => Promise<void>) | null} after_select_language
      * @param {boolean | null} no_language_label
      * @returns {Promise<FluxInputElement>}
      */
-    async getSelectLanguageInputElement(module, after_select_language = null, no_language_label = null) {
-        const languages = await this.getLanguages(
-            module
-        );
+    async getSelectLanguageInputElement(after_select_language = null, no_language_label = null) {
+        const languages = await this.getLanguages();
 
-        const language = await this.getLanguage(
-            module
-        );
+        const language = await this.getLanguage();
 
         const {
             FLUX_INPUT_ELEMENT_EVENT_INPUT,
@@ -237,9 +218,11 @@ export class FluxLocalization {
                 e.detail.value
             );
 
-            if (after_select_language !== null) {
-                await after_select_language();
+            if (after_select_language === null) {
+                return;
             }
+
+            await after_select_language();
         });
 
         return flux_input_element;
@@ -272,11 +255,10 @@ export class FluxLocalization {
             localization,
             texts
         ] = await this.#getLocalization(
-            module,
             language
         );
 
-        let text = texts[key] ?? "";
+        let text = texts[module]?.[key] ?? "";
 
         if (text === "") {
             text = default_text ?? "";
@@ -287,9 +269,7 @@ export class FluxLocalization {
 
             text = `MISSING ${key}`;
 
-            const _localization = localization["fallback-default"] ?? false ? localization : (await this.#getLocalizations(
-                module
-            )).find(__localization => __localization["fallback-default"] ?? false) ?? localization;
+            const _localization = localization["fallback-default"] ?? false ? localization : this.#localizations.find(__localization => __localization["fallback-default"] ?? false) ?? localization;
 
             if (_localization.language !== localization.language) {
                 return this.translate(
@@ -315,31 +295,26 @@ export class FluxLocalization {
     }
 
     /**
-     * @param {string} module
      * @param {string | null} language
-     * @returns {Promise<[Localization, {[key: string]: string}]>}
+     * @returns {Promise<[Localization, {[key: string]: {[key: string]: string}}]>}
      */
-    async #getLocalization(module, language = null) {
+    async #getLocalization(language = null) {
         const _language = language ?? this.#language;
 
         if (_language !== LANGUAGE_SYSTEM) {
-            const texts = this.#texts.get(`${module}_${_language}`) ?? null;
+            const texts = this.#texts[_language] ?? null;
 
             if (texts !== null) {
                 return texts;
             }
         }
 
-        const localizations = await this.#getLocalizations(
-            module
-        );
-
         let localization = null;
 
         for (const __language of _language !== LANGUAGE_SYSTEM ? [
             _language
         ] : "navigator" in globalThis ? navigator.languages : []) {
-            localization = localizations.find(_localization => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language)) ?? null;
+            localization = this.#localizations.find(_localization => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language)) ?? null;
 
             if (localization !== null) {
                 break;
@@ -347,18 +322,18 @@ export class FluxLocalization {
         }
 
         if (localization === null) {
-            localization = localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
+            localization = this.#localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
         }
 
         if (localization === null) {
-            throw new Error(`Missing localization for module ${module}${_language !== LANGUAGE_SYSTEM ? ` and language ${_language}` : ""}!`);
+            throw new Error(`Missing localization${_language !== LANGUAGE_SYSTEM ? ` ${_language}` : ""}!`);
         }
 
         if (this.#language === LANGUAGE_SYSTEM) {
             this.#language = localization.language;
         }
 
-        const texts = this.#texts.get(`${module}_${localization.language}`) ?? null;
+        const texts = this.#texts[localization.language] ?? null;
 
         if (texts !== null) {
             return texts;
@@ -373,7 +348,7 @@ export class FluxLocalization {
             localization.language,
             ...localization["fallback-languages"] ?? []
         ]) {
-            this.#texts.set(`${module}_${__language}`, _texts);
+            this.#texts[__language] = _texts;
         }
 
         return _texts;
@@ -389,20 +364,6 @@ export class FluxLocalization {
             this,
             system_localization_label
         ) : localization.label) ?? localization.language;
-    }
-
-    /**
-     * @param {string} module
-     * @returns {Promise<Localization[]>}
-     */
-    async #getLocalizations(module) {
-        const localizations = this.#localizations.get(module) ?? null;
-
-        if (localizations === null) {
-            throw new Error(`Missing localizations for module ${module}!`);
-        }
-
-        return localizations;
     }
 
     /**
