@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2024-04-22-1
+
+Changes:
+
+- Do not load texts anymore for label only
+
 ## v2024-04-16-1
 
 Changes:

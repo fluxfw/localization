@@ -32,7 +32,7 @@ export class FluxLocalization {
      */
     #system_language;
     /**
-     * @type {{[key: string]: [Localization, {[key: string]: {[key: string]: string}}]}}
+     * @type {{[key: string]: {[key: string]: {[key: string]: string}}}}
      */
     #texts;
 
@@ -83,15 +83,13 @@ export class FluxLocalization {
      * @returns {Promise<Language>}
      */
     async getLanguage(language = null) {
-        const [
-            localization
-        ] = await this.#getLocalization(
+        const localization = await this.#getLocalization(
             language
         );
 
         return {
             direction: localization.direction ?? "ltr",
-            label: await this.#getLocalizationLabel(
+            label: await this.#getLabel(
                 localization
             ),
             language: localization.language,
@@ -108,10 +106,10 @@ export class FluxLocalization {
 
         const _exclude_system = exclude_system ?? false;
 
-        const system_localization_label = !_exclude_system ? await this.#getLocalizationLabel(
-            (await this.#getLocalization(
+        const system_localization_label = !_exclude_system ? await this.#getLabel(
+            await this.#getLocalization(
                 LANGUAGE_SYSTEM
-            ))[0]
+            )
         ) : null;
 
         for (const localization of this.#localizations) {
@@ -119,7 +117,7 @@ export class FluxLocalization {
                 continue;
             }
 
-            languages[localization.language] = await this.#getLocalizationLabel(
+            languages[localization.language] = await this.#getLabel(
                 localization,
                 system_localization_label
             );
@@ -251,14 +249,13 @@ export class FluxLocalization {
      * @returns {Promise<string>}
      */
     async translate(module, key, placeholders = null, language = null, default_text = null) {
-        const [
-            localization,
-            texts
-        ] = await this.#getLocalization(
+        const localization = await this.#getLocalization(
             language
         );
 
-        let text = texts[module]?.[key] ?? "";
+        let text = (await this.#getTexts(
+            localization
+        ))[module]?.[key] ?? "";
 
         if (text === "") {
             text = default_text ?? "";
@@ -286,6 +283,18 @@ export class FluxLocalization {
     }
 
     /**
+     * @param {Localization} localization
+     * @param {string | null} system_localization_label
+     * @returns {Promise<string>}
+     */
+    async #getLabel(localization, system_localization_label = null) {
+        return (typeof localization.label === "function" ? await localization.label(
+            this,
+            system_localization_label
+        ) : localization.label) ?? localization.language;
+    }
+
+    /**
      * @returns {Promise<string>}
      */
     async #getLanguageSetting() {
@@ -296,74 +305,34 @@ export class FluxLocalization {
 
     /**
      * @param {string | null} language
-     * @returns {Promise<[Localization, {[key: string]: {[key: string]: string}}]>}
+     * @returns {Promise<Localization>}
      */
     async #getLocalization(language = null) {
         const _language = language ?? this.#language;
 
-        if (_language !== LANGUAGE_SYSTEM) {
-            const texts = this.#texts[_language] ?? null;
-
-            if (texts !== null) {
-                return texts;
-            }
-        }
-
-        let localization = null;
-
-        for (const __language of _language !== LANGUAGE_SYSTEM ? [
+        const localization = (_language !== LANGUAGE_SYSTEM ? [
             _language
-        ] : "navigator" in globalThis ? navigator.languages : []) {
-            localization = this.#localizations.find(_localization => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language)) ?? null;
-
-            if (localization !== null) {
-                break;
-            }
-        }
-
-        if (localization === null) {
-            localization = this.#localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
-        }
+        ] : "navigator" in globalThis ? navigator.languages : []).find(__language => this.#localizations.find(_localization => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language))) ?? this.#localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
 
         if (localization === null) {
             throw new Error(`Missing localization${_language !== LANGUAGE_SYSTEM ? ` ${_language}` : ""}!`);
         }
 
-        if (this.#language === LANGUAGE_SYSTEM) {
+        if (_language === LANGUAGE_SYSTEM && this.#language === LANGUAGE_SYSTEM) {
             this.#language = localization.language;
         }
 
-        const texts = this.#texts[localization.language] ?? null;
-
-        if (texts !== null) {
-            return texts;
-        }
-
-        const _texts = [
-            localization,
-            (typeof localization.texts === "function" ? await localization.texts() : localization.texts) ?? {}
-        ];
-
-        for (const __language of [
-            localization.language,
-            ...localization["fallback-languages"] ?? []
-        ]) {
-            this.#texts[__language] = _texts;
-        }
-
-        return _texts;
+        return localization;
     }
 
     /**
      * @param {Localization} localization
-     * @param {string | null} system_localization_label
-     * @returns {Promise<string>}
+     * @returns {Promise<{[key: string]: {[key: string]: string}}>}
      */
-    async #getLocalizationLabel(localization, system_localization_label = null) {
-        return (typeof localization.label === "function" ? await localization.label(
-            this,
-            system_localization_label
-        ) : localization.label) ?? localization.language;
+    async #getTexts(localization) {
+        this.#texts[localization.language] ??= (typeof localization.texts === "function" ? await localization.texts() : localization.texts) ?? {};
+
+        return this.#texts[localization.language];
     }
 
     /**
