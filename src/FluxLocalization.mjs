@@ -310,9 +310,11 @@ export class FluxLocalization {
     async #getLocalization(language = null) {
         const _language = language ?? this.#language;
 
-        const localization = (_language !== LANGUAGE_SYSTEM ? [
+        const languages = _language !== LANGUAGE_SYSTEM ? [
             _language
-        ] : "navigator" in globalThis ? navigator.languages : []).find(__language => this.#localizations.find(_localization => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language))) ?? this.#localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
+        ] : "navigator" in globalThis ? navigator.languages : [];
+
+        const localization = this.#localizations.find(_localization => languages.some(__language => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language))) ?? this.#localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
 
         if (localization === null) {
             throw new Error(`Missing localization${_language !== LANGUAGE_SYSTEM ? ` ${_language}` : ""}!`);
