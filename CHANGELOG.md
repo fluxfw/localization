@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2024-04-29-3
+
+Changes:
+
+- Fix `reduce`
+
 ## v2024-04-29-2
 
 Changes:

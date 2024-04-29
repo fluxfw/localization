@@ -314,7 +314,7 @@ export class FluxLocalization {
             _language
         ] : globalThis.navigator?.languages ?? [
             new Intl.DateTimeFormat().resolvedOptions().locale
-        ]).reduce((_localization, __language) => _localization ?? this.#localizations.find(__localization => __localization.language === __language) ?? this.#localizations.find(__localization => (__localization["system-languages"] ?? []).includes(__language))) ?? this.#localizations.find(_localization => _localization.default ?? false) ?? null;
+        ]).reduce((_localization, __language) => _localization ?? this.#localizations.find(__localization => __localization.language === __language) ?? this.#localizations.find(__localization => (__localization["system-languages"] ?? []).includes(__language)), null) ?? this.#localizations.find(_localization => _localization.default ?? false) ?? null;
 
         if (localization === null) {
             throw new Error(`Missing localization${_language !== LANGUAGE_SYSTEM ? ` ${_language}` : ""}!`);
