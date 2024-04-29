@@ -71,7 +71,7 @@ export class FluxLocalization {
      * @returns {Promise<void>}
      */
     async addLocalization(localization) {
-        if (this.#localizations.some(_localization => _localization.language === localization.language || (_localization["fallback-languages"] ?? []).includes(localization.language))) {
+        if (this.#localizations.some(_localization => _localization.language === localization.language)) {
             throw new Error(`Localization ${localization.language} already exists!`);
         }
 
@@ -266,7 +266,7 @@ export class FluxLocalization {
 
             text = `MISSING ${key}`;
 
-            const _localization = localization["fallback-default"] ?? false ? localization : this.#localizations.find(__localization => __localization["fallback-default"] ?? false) ?? localization;
+            const _localization = localization.default ?? false ? localization : this.#localizations.find(__localization => __localization.default ?? false) ?? localization;
 
             if (_localization.language !== localization.language) {
                 return this.translate(
@@ -314,7 +314,7 @@ export class FluxLocalization {
             _language
         ] : "navigator" in globalThis ? navigator.languages : [];
 
-        const localization = this.#localizations.find(_localization => languages.some(__language => _localization.language === __language || (_localization["fallback-languages"] ?? []).includes(__language))) ?? this.#localizations.find(_localization => _localization["fallback-default"] ?? false) ?? null;
+        const localization = this.#localizations.find(_localization => languages.includes(_localization.language)) ?? this.#localizations.find(_localization => languages.some(__language => (_localization["system-languages"] ?? []).includes(__language))) ?? this.#localizations.find(_localization => _localization.default ?? false) ?? null;
 
         if (localization === null) {
             throw new Error(`Missing localization${_language !== LANGUAGE_SYSTEM ? ` ${_language}` : ""}!`);

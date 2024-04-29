@@ -1,5 +1,5 @@
 /** @typedef {import("../FluxLocalization.mjs").FluxLocalization} FluxLocalization */
 
 /**
- * @typedef {{direction?: string | null, "fallback-default"?: boolean | null, "fallback-languages"?: string[] | null, label?: string | ((localization: FluxLocalization, system_localization_label?: string | null) => Promise<string | null>) | null, language: string, texts?: {[key: string]: {[key: string]: string}} | (() => Promise<{[key: string]: {[key: string]: string}} | null>) | null}} Localization
+ * @typedef {{default?: boolean | null, direction?: string | null, label?: string | ((localization: FluxLocalization, system_localization_label?: string | null) => Promise<string | null>) | null, language: string, "system-languages"?: string[] | null, texts?: {[key: string]: {[key: string]: string}} | (() => Promise<{[key: string]: {[key: string]: string}} | null>) | null}} Localization
  */
