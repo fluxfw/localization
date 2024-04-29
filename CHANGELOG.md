@@ -6,6 +6,13 @@ Changes:
 
 \-
 
+## v2024-04-29-2
+
+Changes:
+
+- Respect system languages order
+- Get system language in NodeJS
+
 ## v2024-04-29-1
 
 Changes:
