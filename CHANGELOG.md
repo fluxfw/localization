@@ -6,6 +6,13 @@ Changes:
 
 \-
 
+## v2024-05-03-1
+
+Changes:
+
+- Replace `after_language_select` with `change` event
+- Detect system language change
+
 ## v2024-04-29-3
 
 Changes:

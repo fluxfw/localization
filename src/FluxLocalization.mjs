@@ -10,7 +10,9 @@ import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAG
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 /** @typedef {import("./StyleSheetManager/StyleSheetManager.mjs").StyleSheetManager} StyleSheetManager */
 
-export class FluxLocalization {
+export const FLUX_LOCALIZATION_EVENT_CHANGE = "flux-localization-change";
+
+export class FluxLocalization extends EventTarget {
     /**
      * @type {string}
      */
@@ -32,6 +34,10 @@ export class FluxLocalization {
      */
     #system_language;
     /**
+     * @type {AbortController | null}
+     */
+    #system_language_detector_abort_controller = null;
+    /**
      * @type {{[key: string]: {[key: string]: {[key: string]: string}}}}
      */
     #texts;
@@ -49,7 +55,7 @@ export class FluxLocalization {
 
         flux_localization.#language = await flux_localization.#getLanguageSetting();
 
-        flux_localization.#system_language = flux_localization.#language === LANGUAGE_SYSTEM;
+        await flux_localization.#render();
 
         return flux_localization;
     }
@@ -60,6 +66,8 @@ export class FluxLocalization {
      * @private
      */
     constructor(settings_storage, style_sheet_manager) {
+        super();
+
         this.#settings_storage = settings_storage;
         this.#style_sheet_manager = style_sheet_manager;
         this.#localizations = [];
@@ -83,6 +91,8 @@ export class FluxLocalization {
      * @returns {Promise<Language>}
      */
     async getLanguage(language = null) {
+        await this.#initSystemLanguageDetector();
+
         const localization = await this.#getLocalization(
             language
         );
@@ -127,10 +137,9 @@ export class FluxLocalization {
     }
 
     /**
-     * @param {(() => Promise<void>) | null} after_select_language
      * @returns {Promise<FluxButtonGroupElement>}
      */
-    async getSelectLanguageButtonGroupElement(after_select_language = null) {
+    async getSelectLanguageButtonGroupElement() {
         const languages = await this.getLanguages();
 
         const language = await this.getLanguage();
@@ -159,23 +168,16 @@ export class FluxLocalization {
             await this.setLanguage(
                 e.detail.value
             );
-
-            if (after_select_language === null) {
-                return;
-            }
-
-            await after_select_language();
         });
 
         return flux_button_group_element;
     }
 
     /**
-     * @param {(() => Promise<void>) | null} after_select_language
      * @param {boolean | null} no_language_label
      * @returns {Promise<FluxInputElement>}
      */
-    async getSelectLanguageInputElement(after_select_language = null, no_language_label = null) {
+    async getSelectLanguageInputElement(no_language_label = null) {
         const languages = await this.getLanguages();
 
         const language = await this.getLanguage();
@@ -215,12 +217,6 @@ export class FluxLocalization {
             await this.setLanguage(
                 e.detail.value
             );
-
-            if (after_select_language === null) {
-                return;
-            }
-
-            await after_select_language();
         });
 
         return flux_input_element;
@@ -233,11 +229,11 @@ export class FluxLocalization {
     async setLanguage(language) {
         this.#language = language;
 
-        this.#system_language = this.#language === LANGUAGE_SYSTEM;
-
         await this.#setLanguageSetting(
             this.#language
         );
+
+        await this.#render();
     }
 
     /**
@@ -335,6 +331,54 @@ export class FluxLocalization {
         this.#texts[localization.language] ??= (typeof localization.texts === "function" ? await localization.texts() : localization.texts) ?? {};
 
         return this.#texts[localization.language];
+    }
+
+    /**
+     * @returns {Promise<void>}
+     */
+    async #initSystemLanguageDetector() {
+        if (!("addEventListener" in globalThis)) {
+            return;
+        }
+
+        if (this.#system_language) {
+            if (this.#system_language_detector_abort_controller !== null) {
+                return;
+            }
+
+            this.#system_language_detector_abort_controller = new AbortController();
+
+            addEventListener("languagechange", async () => {
+                if (this.#system_language) {
+                    this.#language = LANGUAGE_SYSTEM;
+                }
+
+                await this.#render();
+            }, {
+                signal: this.#system_language_detector_abort_controller.signal
+            });
+        } else {
+            if (this.#system_language_detector_abort_controller === null) {
+                return;
+            }
+
+            this.#system_language_detector_abort_controller.abort();
+
+            this.#system_language_detector_abort_controller = null;
+        }
+    }
+
+    /**
+     * @returns {Promise<void>}
+     */
+    async #render() {
+        this.#system_language = this.#language === LANGUAGE_SYSTEM;
+
+        this.dispatchEvent(new CustomEvent(FLUX_LOCALIZATION_EVENT_CHANGE, {
+            detail: {
+                language: await this.getLanguage()
+            }
+        }));
     }
 
     /**
