@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2024-05-03-2
+
+Changes:
+
+- Remove init change event
+
 ## v2024-05-03-1
 
 Changes:

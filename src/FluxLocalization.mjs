@@ -55,7 +55,9 @@ export class FluxLocalization extends EventTarget {
 
         flux_localization.#language = await flux_localization.#getLanguageSetting();
 
-        await flux_localization.#render();
+        await flux_localization.#render(
+            false
+        );
 
         return flux_localization;
     }
@@ -91,8 +93,6 @@ export class FluxLocalization extends EventTarget {
      * @returns {Promise<Language>}
      */
     async getLanguage(language = null) {
-        await this.#initSystemLanguageDetector();
-
         const localization = await this.#getLocalization(
             language
         );
@@ -369,10 +369,17 @@ export class FluxLocalization extends EventTarget {
     }
 
     /**
+     * @param {boolean | null} event
      * @returns {Promise<void>}
      */
-    async #render() {
+    async #render(event = null) {
         this.#system_language = this.#language === LANGUAGE_SYSTEM;
+
+        await this.#initSystemLanguageDetector();
+
+        if (!(event ?? true)) {
+            return;
+        }
 
         this.dispatchEvent(new CustomEvent(FLUX_LOCALIZATION_EVENT_CHANGE, {
             detail: {
