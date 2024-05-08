@@ -1,3 +1,1 @@
-# flux-localization
-
-Localization
+# localization

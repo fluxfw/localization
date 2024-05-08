@@ -1,1 +1,1 @@
-export const LOCALIZATION_MODULE = "flux-localization";
+export const LOCALIZATION_MODULE = "localization";

@@ -1,12 +1,12 @@
-import { LOCALIZATION_MODULE } from "./LOCALIZATION_MODULE.mjs";
-import { LOCALIZATION_KEY_SYSTEM, LOCALIZATION_KEY_SYSTEM_WITH_LANGUAGE } from "./LOCALIZATION_KEY.mjs";
+import { LOCALIZATION_MODULE } from "./Localization/LOCALIZATION_MODULE.mjs";
+import { LOCALIZATION_KEY_SYSTEM, LOCALIZATION_KEY_SYSTEM_WITH_LANGUAGE } from "./Localization/LOCALIZATION_KEY.mjs";
 
-/** @typedef {import("./Localization.mjs").Localization} Localization */
+/** @typedef {import("./LocalizationObject.mjs").LocalizationObject} LocalizationObject */
 
 export const LANGUAGE_SYSTEM = "system";
 
 /**
- * @type {Localization}
+ * @type {LocalizationObject}
  */
 export const SYSTEM_LOCALIZATION = Object.freeze({
     label: async (localization, system_localization_label = null) => system_localization_label !== null ? localization.translate(

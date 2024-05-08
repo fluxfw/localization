@@ -1,24 +1,26 @@
-import { LANGUAGE_SYSTEM } from "./Localization/SYSTEM_LOCALIZATION.mjs";
+import { LANGUAGE_SYSTEM } from "./SYSTEM_LOCALIZATION.mjs";
 import { LOCALIZATION_KEY_LANGUAGE } from "./Localization/LOCALIZATION_KEY.mjs";
 import { LOCALIZATION_MODULE } from "./Localization/LOCALIZATION_MODULE.mjs";
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
-/** @typedef {import("flux-button-group/src/FluxButtonGroupElement.mjs").FluxButtonGroupElement} FluxButtonGroupElement */
-/** @typedef {import("flux-form/src/FluxInputElement.mjs").FluxInputElement} FluxInputElement */
-/** @typedef {import("./Localization/Language.mjs").Language} Language */
-/** @typedef {import("./Localization/Localization.mjs").Localization} Localization */
+/** @typedef {import("button-group/src/ButtonGroupElement.mjs").ButtonGroupElement} ButtonGroupElement */
+/** @typedef {import("form/src/InputElement.mjs").InputElement} InputElement */
+/** @typedef {import("./Language.mjs").Language} Language */
+/** @typedef {import("./LocalizationObject.mjs").LocalizationObject} LocalizationObject */
+/** @typedef {import("./Placeholders.mjs").Placeholders} Placeholders */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 /** @typedef {import("./StyleSheetManager/StyleSheetManager.mjs").StyleSheetManager} StyleSheetManager */
+/** @typedef {import("./Texts.mjs").Texts} Texts */
 
-export const FLUX_LOCALIZATION_EVENT_CHANGE = "flux-localization-change";
+export const LOCALIZATION_EVENT_CHANGE = "localization-change";
 
-export class FluxLocalization extends EventTarget {
+export class Localization extends EventTarget {
     /**
      * @type {string}
      */
     #language;
     /**
-     * @type {Localization[]}
+     * @type {LocalizationObject[]}
      */
     #localizations;
     /**
@@ -38,28 +40,28 @@ export class FluxLocalization extends EventTarget {
      */
     #system_language_detector_abort_controller = null;
     /**
-     * @type {{[key: string]: {[key: string]: {[key: string]: string}}}}
+     * @type {{[key: string]: {[key: string]: Texts}}}
      */
     #texts;
 
     /**
      * @param {SettingsStorage | null} settings_storage
      * @param {StyleSheetManager | null} style_sheet_manager
-     * @returns {Promise<FluxLocalization>}
+     * @returns {Promise<Localization>}
      */
     static async new(settings_storage = null, style_sheet_manager = null) {
-        const flux_localization = new this(
+        const localization = new this(
             settings_storage,
             style_sheet_manager
         );
 
-        flux_localization.#language = await flux_localization.#getLanguageSetting();
+        localization.#language = await localization.#getLanguageSetting();
 
-        await flux_localization.#render(
+        await localization.#render(
             false
         );
 
-        return flux_localization;
+        return localization;
     }
 
     /**
@@ -77,7 +79,7 @@ export class FluxLocalization extends EventTarget {
     }
 
     /**
-     * @param {Localization} localization
+     * @param {LocalizationObject} localization
      * @returns {Promise<void>}
      */
     async addLocalization(localization) {
@@ -137,7 +139,7 @@ export class FluxLocalization extends EventTarget {
     }
 
     /**
-     * @returns {Promise<FluxButtonGroupElement>}
+     * @returns {Promise<ButtonGroupElement>}
      */
     async getSelectLanguageButtonGroupElement() {
         const languages = await this.getLanguages();
@@ -147,11 +149,11 @@ export class FluxLocalization extends EventTarget {
         const show_system_language = Object.hasOwn(languages, LANGUAGE_SYSTEM);
 
         const {
-            FLUX_BUTTON_GROUP_ELEMENT_EVENT_INPUT,
-            FluxButtonGroupElement
-        } = await import("flux-button-group/src/FluxButtonGroupElement.mjs");
+            BUTTON_GROUP_ELEMENT_EVENT_INPUT,
+            ButtonGroupElement
+        } = await import("button-group/src/ButtonGroupElement.mjs");
 
-        const flux_button_group_element = await FluxButtonGroupElement.new(
+        const button_group_element = await ButtonGroupElement.new(
             Object.entries(languages).map(([
                 _language,
                 label
@@ -164,18 +166,18 @@ export class FluxLocalization extends EventTarget {
             this.#style_sheet_manager
         );
 
-        flux_button_group_element.addEventListener(FLUX_BUTTON_GROUP_ELEMENT_EVENT_INPUT, async e => {
+        button_group_element.addEventListener(BUTTON_GROUP_ELEMENT_EVENT_INPUT, async e => {
             await this.setLanguage(
                 e.detail.value
             );
         });
 
-        return flux_button_group_element;
+        return button_group_element;
     }
 
     /**
      * @param {boolean | null} no_language_label
-     * @returns {Promise<FluxInputElement>}
+     * @returns {Promise<InputElement>}
      */
     async getSelectLanguageInputElement(no_language_label = null) {
         const languages = await this.getLanguages();
@@ -183,14 +185,14 @@ export class FluxLocalization extends EventTarget {
         const language = await this.getLanguage();
 
         const {
-            FLUX_INPUT_ELEMENT_EVENT_INPUT,
-            FluxInputElement
-        } = await import("flux-form/src/FluxInputElement.mjs");
+            INPUT_ELEMENT_EVENT_INPUT,
+            InputElement
+        } = await import("form/src/InputElement.mjs");
         const {
             INPUT_TYPE_SELECT
-        } = await import("flux-form/src/INPUT_TYPE.mjs");
+        } = await import("form/src/INPUT_TYPE.mjs");
 
-        const flux_input_element = await FluxInputElement.new(
+        const input_element = await InputElement.new(
             {
                 label: !(no_language_label ?? false) ? await this.translate(
                     LOCALIZATION_MODULE,
@@ -213,13 +215,13 @@ export class FluxLocalization extends EventTarget {
             this.#style_sheet_manager
         );
 
-        flux_input_element.addEventListener(FLUX_INPUT_ELEMENT_EVENT_INPUT, async e => {
+        input_element.addEventListener(INPUT_ELEMENT_EVENT_INPUT, async e => {
             await this.setLanguage(
                 e.detail.value
             );
         });
 
-        return flux_input_element;
+        return input_element;
     }
 
     /**
@@ -239,7 +241,7 @@ export class FluxLocalization extends EventTarget {
     /**
      * @param {string} module
      * @param {string} key
-     * @param {{[key: string]: string} | null} placeholders
+     * @param {Placeholders | null} placeholders
      * @param {string | null} language
      * @param {string | null} default_text
      * @returns {Promise<string>}
@@ -260,7 +262,7 @@ export class FluxLocalization extends EventTarget {
         if (text === "") {
             console.warn(`Missing text ${key} for module ${module} and language ${localization.language}!`);
 
-            text = `MISSING ${key}`;
+            text = `MISSING ${key}!`;
 
             const _localization = localization.default ?? false ? localization : this.#localizations.find(__localization => __localization.default ?? false) ?? localization;
 
@@ -275,11 +277,55 @@ export class FluxLocalization extends EventTarget {
             }
         }
 
-        return text.replaceAll(/{([\w-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
+        return this.#replacePlaceholders(
+            text,
+            placeholders
+        );
     }
 
     /**
-     * @param {Localization} localization
+     * @param {Texts} texts
+     * @param {Placeholders | null} placeholders
+     * @param {string | null} language
+     * @param {string | null} default_text
+     * @returns {Promise<string>}
+     */
+    async translateStatic(texts, placeholders = null, language = null, default_text = null) {
+        const localization = await this.#getLocalization(
+            language
+        );
+
+        let text = texts[localization.language] ?? "";
+
+        if (text === "") {
+            text = default_text ?? "";
+        }
+
+        if (text === "") {
+            console.warn(`Missing text for language ${localization.language}!`);
+
+            text = `MISSING ${localization.language}!`;
+
+            const _localization = localization.default ?? false ? localization : this.#localizations.find(__localization => __localization.default ?? false) ?? localization;
+
+            if (_localization.language !== localization.language) {
+                return this.translateStatic(
+                    texts,
+                    placeholders,
+                    _localization.language,
+                    text
+                );
+            }
+        }
+
+        return this.#replacePlaceholders(
+            text,
+            placeholders
+        );
+    }
+
+    /**
+     * @param {LocalizationObject} localization
      * @param {string | null} system_localization_label
      * @returns {Promise<string>}
      */
@@ -301,7 +347,7 @@ export class FluxLocalization extends EventTarget {
 
     /**
      * @param {string | null} language
-     * @returns {Promise<Localization>}
+     * @returns {Promise<LocalizationObject>}
      */
     async #getLocalization(language = null) {
         const _language = language ?? this.#language;
@@ -310,7 +356,7 @@ export class FluxLocalization extends EventTarget {
             _language
         ] : globalThis.navigator?.languages ?? [
             new Intl.DateTimeFormat().resolvedOptions().locale
-        ]).reduce((_localization, __language) => _localization ?? this.#localizations.find(__localization => __localization.language === __language) ?? this.#localizations.find(__localization => (__localization["system-languages"] ?? []).includes(__language)), null) ?? this.#localizations.find(_localization => _localization.default ?? false) ?? null;
+        ]).reduce((_localization, __language) => _localization ?? this.#localizations.find(__localization => __localization.language === __language) ?? this.#localizations.find(__localization => (__localization["additional-system-languages"] ?? []).includes(__language)), null) ?? this.#localizations.find(_localization => _localization.default ?? false) ?? null;
 
         if (localization === null) {
             throw new Error(`Missing localization${_language !== LANGUAGE_SYSTEM ? ` ${_language}` : ""}!`);
@@ -324,19 +370,19 @@ export class FluxLocalization extends EventTarget {
     }
 
     /**
-     * @param {Localization} localization
-     * @returns {Promise<{[key: string]: {[key: string]: string}}>}
+     * @param {LocalizationObject} localization
+     * @returns {Promise<{[key: string]: Texts}>}
      */
     async #getTexts(localization) {
-        this.#texts[localization.language] ??= (typeof localization.texts === "function" ? await localization.texts() : localization.texts) ?? {};
+        this.#texts[localization.language] ??= (typeof localization.texts === "function" ? localization.texts() : localization.texts) ?? {};
 
         return this.#texts[localization.language];
     }
 
     /**
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    async #initSystemLanguageDetector() {
+    #initSystemLanguageDetector() {
         if (!("addEventListener" in globalThis)) {
             return;
         }
@@ -375,17 +421,26 @@ export class FluxLocalization extends EventTarget {
     async #render(event = null) {
         this.#system_language = this.#language === LANGUAGE_SYSTEM;
 
-        await this.#initSystemLanguageDetector();
+        this.#initSystemLanguageDetector();
 
         if (!(event ?? true)) {
             return;
         }
 
-        this.dispatchEvent(new CustomEvent(FLUX_LOCALIZATION_EVENT_CHANGE, {
+        this.dispatchEvent(new CustomEvent(LOCALIZATION_EVENT_CHANGE, {
             detail: {
                 language: await this.getLanguage()
             }
         }));
+    }
+
+    /**
+     * @param {string} text
+     * @param {Placeholders | null} placeholders
+     * @returns {string}
+     */
+    #replacePlaceholders(text, placeholders = null) {
+        return text.replaceAll(/{([\w-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
     }
 
     /**

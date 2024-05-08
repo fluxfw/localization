@@ -6,6 +6,15 @@ Changes:
 
 \-
 
+## v2024-05-08-1
+
+Changes:
+
+- Deflux
+- `translateStatic`
+- Fix may double load texts if pa­r­al­lel call
+- Rename `system-languages` to `additional-system-languages`
+
 ## v2024-05-03-2
 
 Changes:
