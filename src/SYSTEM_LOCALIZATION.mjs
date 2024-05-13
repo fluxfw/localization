@@ -9,11 +9,11 @@ export const LANGUAGE_SYSTEM = "system";
  * @type {LocalizationObject}
  */
 export const SYSTEM_LOCALIZATION = Object.freeze({
-    label: async (localization, system_localization_label = null) => system_localization_label !== null ? localization.translate(
+    label: async (localization, system_label = null) => system_label !== null ? localization.translate(
         LOCALIZATION_MODULE,
         LOCALIZATION_KEY_SYSTEM_WITH_LANGUAGE,
         {
-            language: system_localization_label
+            language: system_label
         }
     ) : localization.translate(
         LOCALIZATION_MODULE,

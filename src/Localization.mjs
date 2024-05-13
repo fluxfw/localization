@@ -1,22 +1,17 @@
 import { LANGUAGE_SYSTEM } from "./SYSTEM_LOCALIZATION.mjs";
-import { LOCALIZATION_KEY_LANGUAGE } from "./Localization/LOCALIZATION_KEY.mjs";
-import { LOCALIZATION_MODULE } from "./Localization/LOCALIZATION_MODULE.mjs";
 import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
-/** @typedef {import("button-group/src/ButtonGroupElement.mjs").ButtonGroupElement} ButtonGroupElement */
-/** @typedef {import("form/src/InputElement.mjs").InputElement} InputElement */
 /** @typedef {import("./Language.mjs").Language} Language */
 /** @typedef {import("./LocalizationObject.mjs").LocalizationObject} LocalizationObject */
 /** @typedef {import("./Placeholders.mjs").Placeholders} Placeholders */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
-/** @typedef {import("./StyleSheetManager/StyleSheetManager.mjs").StyleSheetManager} StyleSheetManager */
 /** @typedef {import("./Texts.mjs").Texts} Texts */
 
 export const LOCALIZATION_EVENT_CHANGE = "localization-change";
 
 export class Localization extends EventTarget {
     /**
-     * @type {string}
+     * @type {string | null}
      */
     #language;
     /**
@@ -28,52 +23,36 @@ export class Localization extends EventTarget {
      */
     #settings_storage;
     /**
-     * @type {StyleSheetManager | null}
-     */
-    #style_sheet_manager;
-    /**
-     * @type {boolean}
-     */
-    #system_language;
-    /**
      * @type {AbortController | null}
      */
-    #system_language_detector_abort_controller = null;
+    #system_detector_abort_controller = null;
     /**
-     * @type {{[key: string]: {[key: string]: Texts}}}
+     * @type {{[key: string]: Promise<{[key: string]: Texts}>}}
      */
     #texts;
 
     /**
      * @param {SettingsStorage | null} settings_storage
-     * @param {StyleSheetManager | null} style_sheet_manager
      * @returns {Promise<Localization>}
      */
-    static async new(settings_storage = null, style_sheet_manager = null) {
+    static async new(settings_storage = null) {
         const localization = new this(
-            settings_storage,
-            style_sheet_manager
+            settings_storage
         );
 
-        localization.#language = await localization.#getLanguageSetting();
-
-        await localization.#render(
-            false
-        );
+        localization.#language = await localization.#getLanguage();
 
         return localization;
     }
 
     /**
      * @param {SettingsStorage | null} settings_storage
-     * @param {StyleSheetManager | null} style_sheet_manager
      * @private
      */
-    constructor(settings_storage, style_sheet_manager) {
+    constructor(settings_storage) {
         super();
 
         this.#settings_storage = settings_storage;
-        this.#style_sheet_manager = style_sheet_manager;
         this.#localizations = [];
         this.#texts = {};
     }
@@ -84,10 +63,16 @@ export class Localization extends EventTarget {
      */
     async addLocalization(localization) {
         if (this.#localizations.some(_localization => _localization.language === localization.language)) {
-            throw new Error(`Localization ${localization.language} already exists!`);
+            throw new Error(`Localization with language ${localization.language} already exists!`);
         }
 
         this.#localizations.push(localization);
+
+        if (!(this.#language !== null ? this.#language === localization.language : localization.default ?? false)) {
+            return;
+        }
+
+        await this.#render();
     }
 
     /**
@@ -95,7 +80,10 @@ export class Localization extends EventTarget {
      * @returns {Promise<Language>}
      */
     async getLanguage(language = null) {
-        const localization = await this.#getLocalization(
+        const {
+            localization,
+            system
+        } = await this.#getLocalization(
             language
         );
 
@@ -105,7 +93,7 @@ export class Localization extends EventTarget {
                 localization
             ),
             language: localization.language,
-            system: this.#system_language
+            system
         };
     }
 
@@ -114,15 +102,13 @@ export class Localization extends EventTarget {
      * @returns {Promise<{[key: string]: string}>}
      */
     async getLanguages(exclude_system = null) {
-        const languages = {};
-
         const _exclude_system = exclude_system ?? false;
 
-        const system_localization_label = !_exclude_system ? await this.#getLabel(
-            await this.#getLocalization(
-                LANGUAGE_SYSTEM
-            )
-        ) : null;
+        const system_label = !_exclude_system ? (await this.getLanguage(
+            LANGUAGE_SYSTEM
+        )).label : null;
+
+        const languages = {};
 
         for (const localization of this.#localizations) {
             if (_exclude_system && localization.language === LANGUAGE_SYSTEM) {
@@ -131,107 +117,52 @@ export class Localization extends EventTarget {
 
             languages[localization.language] = await this.#getLabel(
                 localization,
-                system_localization_label
+                system_label
             );
         }
 
-        return languages;
+        return Object.fromEntries(Object.entries(languages).sort(([
+            language_1,
+            label_1
+        ], [
+            language_2,
+            label_2
+        ]) => {
+            const system_1 = language_1 === LANGUAGE_SYSTEM ? 0 : 1;
+            const system_2 = language_2 === LANGUAGE_SYSTEM ? 0 : 1;
+
+            if (system_1 > system_2) {
+                return 1;
+            }
+
+            if (system_1 < system_2) {
+                return -1;
+            }
+
+            const _label_1 = label_1.toLowerCase();
+            const _label_2 = label_2.toLowerCase();
+
+            if (_label_1 > _label_2) {
+                return 1;
+            }
+
+            if (_label_1 < _label_2) {
+                return -1;
+            }
+
+            return 0;
+        }));
     }
 
     /**
-     * @returns {Promise<ButtonGroupElement>}
-     */
-    async getSelectLanguageButtonGroupElement() {
-        const languages = await this.getLanguages();
-
-        const language = await this.getLanguage();
-
-        const show_system_language = Object.hasOwn(languages, LANGUAGE_SYSTEM);
-
-        const {
-            BUTTON_GROUP_ELEMENT_EVENT_INPUT,
-            ButtonGroupElement
-        } = await import("button-group/src/ButtonGroupElement.mjs");
-
-        const button_group_element = await ButtonGroupElement.new(
-            Object.entries(languages).map(([
-                _language,
-                label
-            ]) => ({
-                label,
-                selected: _language === LANGUAGE_SYSTEM ? language.system : (show_system_language ? !language.system : true) && _language === language.language,
-                title: label,
-                value: _language
-            })),
-            this.#style_sheet_manager
-        );
-
-        button_group_element.addEventListener(BUTTON_GROUP_ELEMENT_EVENT_INPUT, async e => {
-            await this.setLanguage(
-                e.detail.value
-            );
-        });
-
-        return button_group_element;
-    }
-
-    /**
-     * @param {boolean | null} no_language_label
-     * @returns {Promise<InputElement>}
-     */
-    async getSelectLanguageInputElement(no_language_label = null) {
-        const languages = await this.getLanguages();
-
-        const language = await this.getLanguage();
-
-        const {
-            INPUT_ELEMENT_EVENT_INPUT,
-            InputElement
-        } = await import("form/src/InputElement.mjs");
-        const {
-            INPUT_TYPE_SELECT
-        } = await import("form/src/INPUT_TYPE.mjs");
-
-        const input_element = await InputElement.new(
-            {
-                label: !(no_language_label ?? false) ? await this.translate(
-                    LOCALIZATION_MODULE,
-                    LOCALIZATION_KEY_LANGUAGE
-                ) : null,
-                name: SETTINGS_STORAGE_KEY_LANGUAGE,
-                options: Object.entries(languages).map(([
-                    _language,
-                    label
-                ]) => ({
-                    label,
-                    title: label,
-                    value: _language
-                })),
-                options_no_empty_value: true,
-                required: true,
-                type: INPUT_TYPE_SELECT,
-                value: Object.hasOwn(languages, LANGUAGE_SYSTEM) && language.system ? LANGUAGE_SYSTEM : language.language
-            },
-            this.#style_sheet_manager
-        );
-
-        input_element.addEventListener(INPUT_ELEMENT_EVENT_INPUT, async e => {
-            await this.setLanguage(
-                e.detail.value
-            );
-        });
-
-        return input_element;
-    }
-
-    /**
-     * @param {string} language
+     * @param {string | null} language
      * @returns {Promise<void>}
      */
-    async setLanguage(language) {
+    async setLanguage(language = null) {
         this.#language = language;
 
-        await this.#setLanguageSetting(
+        await this.#settings_storage?.store(
+            SETTINGS_STORAGE_KEY_LANGUAGE,
             this.#language
         );
 
@@ -247,7 +178,9 @@ export class Localization extends EventTarget {
      * @returns {Promise<string>}
      */
     async translate(module, key, placeholders = null, language = null, default_text = null) {
-        const localization = await this.#getLocalization(
+        const {
+            localization
+        } = await this.#getLocalization(
             language
         );
 
@@ -264,17 +197,25 @@ export class Localization extends EventTarget {
 
             text = `MISSING ${key}!`;
 
-            const _localization = localization.default ?? false ? localization : this.#localizations.find(__localization => __localization.default ?? false) ?? localization;
-
-            if (_localization.language !== localization.language) {
-                return this.translate(
-                    module,
-                    key,
-                    placeholders,
-                    _localization.language,
-                    text
-                );
+            if (localization.default ?? false) {
+                return text;
             }
+
+            const default_localization = this.#getDefaultLocalization(
+                false
+            );
+
+            if (default_localization === null || default_localization.language === localization.language) {
+                return text;
+            }
+
+            return this.translate(
+                module,
+                key,
+                placeholders,
+                default_localization.language,
+                text
+            );
         }
 
         return this.#replacePlaceholders(
@@ -291,7 +232,9 @@ export class Localization extends EventTarget {
      * @returns {Promise<string>}
      */
     async translateStatic(texts, placeholders = null, language = null, default_text = null) {
-        const localization = await this.#getLocalization(
+        const {
+            localization
+        } = await this.#getLocalization(
             language
         );
 
@@ -306,16 +249,24 @@ export class Localization extends EventTarget {
 
             text = `MISSING ${localization.language}!`;
 
-            const _localization = localization.default ?? false ? localization : this.#localizations.find(__localization => __localization.default ?? false) ?? localization;
-
-            if (_localization.language !== localization.language) {
-                return this.translateStatic(
-                    texts,
-                    placeholders,
-                    _localization.language,
-                    text
-                );
+            if (localization.default ?? false) {
+                return text;
             }
+
+            const default_localization = this.#getDefaultLocalization(
+                false
+            );
+
+            if (default_localization === null || default_localization.language === localization.language) {
+                return text;
+            }
+
+            return this.translateStatic(
+                texts,
+                placeholders,
+                default_localization.language,
+                text
+            );
         }
 
         return this.#replacePlaceholders(
@@ -325,48 +276,88 @@ export class Localization extends EventTarget {
     }
 
     /**
-     * @param {LocalizationObject} localization
-     * @param {string | null} system_localization_label
-     * @returns {Promise<string>}
+     * @param {boolean} system
+     * @returns {LocalizationObject | null}
      */
-    async #getLabel(localization, system_localization_label = null) {
-        return (typeof localization.label === "function" ? await localization.label(
-            this,
-            system_localization_label
-        ) : localization.label) ?? localization.language;
+    #getDefaultLocalization(system) {
+        return this.#localizations.find(localization => (localization.default ?? false) && (localization.language === LANGUAGE_SYSTEM) === system) ?? null;
     }
 
     /**
+     * @param {LocalizationObject} localization
+     * @param {string | null} system_label
      * @returns {Promise<string>}
      */
-    async #getLanguageSetting() {
+    async #getLabel(localization, system_label = null) {
+        return ((localization.label ?? null) !== null ? typeof localization.label === "function" ? await localization.label(
+            this,
+            system_label
+        ) : localization.label : null) ?? localization.language;
+    }
+
+    /**
+     * @returns {Promise<string | null>}
+     */
+    async #getLanguage() {
         return await this.#settings_storage?.get(
             SETTINGS_STORAGE_KEY_LANGUAGE
-        ) ?? LANGUAGE_SYSTEM;
+        ) ?? null;
     }
 
     /**
      * @param {string | null} language
-     * @returns {Promise<LocalizationObject>}
+     * @returns {Promise<{localization: LocalizationObject, system: boolean}>}
      */
     async #getLocalization(language = null) {
-        const _language = language ?? this.#language;
+        const languages = Array.from(new Set([
+            language,
+            this.#language,
+            this.#getDefaultLocalization(
+                true
+            )?.language ?? null,
+            this.#getDefaultLocalization(
+                false
+            )?.language ?? null
+        ].filter(_language => _language !== null)));
 
-        const localization = (_language !== LANGUAGE_SYSTEM ? [
+        let localization = languages.reduce((_localization, _language) => _localization ?? this.#getLocalizationByLanguage(
             _language
-        ] : globalThis.navigator?.languages ?? [
-            new Intl.DateTimeFormat().resolvedOptions().locale
-        ]).reduce((_localization, __language) => _localization ?? this.#localizations.find(__localization => __localization.language === __language) ?? this.#localizations.find(__localization => (__localization["additional-system-languages"] ?? []).includes(__language)), null) ?? this.#localizations.find(_localization => _localization.default ?? false) ?? null;
+        ), null);
 
         if (localization === null) {
-            throw new Error(`Missing localization${_language !== LANGUAGE_SYSTEM ? ` ${_language}` : ""}!`);
+            throw new Error(`No localization${languages.length > 0 ? `s for language${languages.length > 1 ? "s" : ""} ${languages.join(", ")}` : ""}!`);
         }
 
-        if (_language === LANGUAGE_SYSTEM && this.#language === LANGUAGE_SYSTEM) {
-            this.#language = localization.language;
+        const system = localization.language === LANGUAGE_SYSTEM;
+
+        if (system) {
+            localization = navigator.languages.reduce((_localization, _language) => _localization ?? this.#getLocalizationByLanguage(
+                _language
+            ) ?? this.#localizations.find(__localization => (__localization["additional-system-languages"] ?? []).includes(_language)) ?? null, null);
+
+            if (localization === null) {
+                localization = this.#getDefaultLocalization(
+                    false
+                );
+
+                if (localization === null) {
+                    throw new Error(`No localizations for system language${navigator.languages.length > 0 ? `${navigator.languages.length > 1 ? "s" : ""} ${navigator.languages.join(", ")}` : ""}!`);
+                }
+            }
         }
 
-        return localization;
+        return {
+            localization,
+            system
+        };
+    }
+
+    /**
+     * @param {string} language
+     * @returns {LocalizationObject | null}
+     */
+    #getLocalizationByLanguage(language) {
+        return this.#localizations.find(localization => localization.language === language) ?? null;
     }
 
     /**
@@ -374,62 +365,56 @@ export class Localization extends EventTarget {
      * @returns {Promise<{[key: string]: Texts}>}
      */
     async #getTexts(localization) {
-        this.#texts[localization.language] ??= (typeof localization.texts === "function" ? localization.texts() : localization.texts) ?? {};
+        this.#texts[localization.language] ??= (async () => (typeof localization.texts === "function" ? localization.texts() : localization.texts) ?? {})();
 
         return this.#texts[localization.language];
     }
 
     /**
+     * @param {Language} language
      * @returns {void}
      */
-    #initSystemLanguageDetector() {
+    #initSystemDetector(language) {
         if (!("addEventListener" in globalThis)) {
             return;
         }
 
-        if (this.#system_language) {
-            if (this.#system_language_detector_abort_controller !== null) {
+        if (language.system) {
+            if (this.#system_detector_abort_controller !== null) {
                 return;
             }
 
-            this.#system_language_detector_abort_controller = new AbortController();
+            this.#system_detector_abort_controller = new AbortController();
 
             addEventListener("languagechange", async () => {
-                if (this.#system_language) {
-                    this.#language = LANGUAGE_SYSTEM;
-                }
-
                 await this.#render();
             }, {
-                signal: this.#system_language_detector_abort_controller.signal
+                signal: this.#system_detector_abort_controller.signal
             });
         } else {
-            if (this.#system_language_detector_abort_controller === null) {
+            if (this.#system_detector_abort_controller === null) {
                 return;
             }
 
-            this.#system_language_detector_abort_controller.abort();
+            this.#system_detector_abort_controller.abort();
 
-            this.#system_language_detector_abort_controller = null;
+            this.#system_detector_abort_controller = null;
         }
     }
 
     /**
-     * @param {boolean | null} event
      * @returns {Promise<void>}
      */
-    async #render(event = null) {
-        this.#system_language = this.#language === LANGUAGE_SYSTEM;
+    async #render() {
+        const language = await this.getLanguage();
 
-        this.#initSystemLanguageDetector();
-
-        if (!(event ?? true)) {
-            return;
-        }
+        this.#initSystemDetector(
+            language
+        );
 
         this.dispatchEvent(new CustomEvent(LOCALIZATION_EVENT_CHANGE, {
             detail: {
-                language: await this.getLanguage()
+                language
             }
         }));
     }
@@ -441,20 +426,5 @@ export class Localization extends EventTarget {
      */
     #replacePlaceholders(text, placeholders = null) {
         return text.replaceAll(/{([\w-]+)}/g, (match, placeholder) => placeholders?.[placeholder] ?? match);
-    }
-
-    /**
-     * @param {string} language
-     * @returns {Promise<void>}
-     */
-    async #setLanguageSetting(language) {
-        if (this.#settings_storage === null) {
-            throw new Error("Missing SettingsStorage!");
-        }
-
-        await this.#settings_storage.store(
-            SETTINGS_STORAGE_KEY_LANGUAGE,
-            language
-        );
     }
 }

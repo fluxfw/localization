@@ -6,6 +6,20 @@ Changes:
 
 \-
 
+## v2024-05-13-1
+
+Changes:
+
+- Multiple default localizations can be set
+  - If system, this is used as default selected language and an other non-system is used as fallback
+  - If non-system only, this is used for both as default selected language and as fallback
+  - Remove default set to system
+- Only render after add localization (Need to add system localization as last)
+- Improved get localization
+- Sort languages by label
+- Optional SettingsStorage
+- Remove select ui
+
 ## v2024-05-08-1
 
 Changes:
