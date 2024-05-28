@@ -1,9 +1,10 @@
 *
-!bin
-!bin/**
 !src
 !src/**
 !.gitignore
 !CHANGELOG.md
+!lint.sh
+!pre-publish.sh
+!publish.sh
 !README.md
 !version
