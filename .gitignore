@@ -1,9 +1,10 @@
 *
-!src
-!src/**
+!library
+!library/**
 !.gitignore
 !CHANGELOG.md
 !lint.sh
+!package.json
 !pre-publish.sh
 !publish.sh
 !README.md
