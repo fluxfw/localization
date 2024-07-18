@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2024-07-18-1
+
+Changes:
+
+- Load texts per module
+
 ## v2024-07-08-1
 
 Changes:

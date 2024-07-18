@@ -27,7 +27,7 @@ export class Localization extends EventTarget {
      */
     #system_detector_abort_controller = null;
     /**
-     * @type {{[key: string]: Promise<{[key: string]: Texts}>}}
+     * @type {{[key: string]: {[key: string]: Promise<Texts>}}}
      */
     #texts;
 
@@ -185,8 +185,9 @@ export class Localization extends EventTarget {
         );
 
         let text = (await this.#getTexts(
-            localization
-        ))[module]?.[key] ?? "";
+            localization,
+            module
+        ))[key] ?? "";
 
         if (text === "") {
             text = default_text ?? "";
@@ -289,10 +290,10 @@ export class Localization extends EventTarget {
      * @returns {Promise<string>}
      */
     async #getLabel(localization, system_label = null) {
-        return ((localization.label ?? null) !== null ? typeof localization.label === "function" ? await localization.label(
+        return (typeof localization.label === "function" ? await localization.label(
             this,
             system_label
-        ) : localization.label : null) ?? localization.language;
+        ) : localization.label) ?? localization.language;
     }
 
     /**
@@ -331,7 +332,9 @@ export class Localization extends EventTarget {
         const system = localization.language === LANGUAGE_SYSTEM;
 
         if (system) {
-            localization = navigator.languages.reduce((_localization, _language) => _localization ?? this.#getLocalizationByLanguage(
+            const _languages = Array.from(new Set(navigator.languages));
+
+            localization = _languages.reduce((_localization, _language) => _localization ?? this.#getLocalizationByLanguage(
                 _language
             ) ?? this.#localizations.find(__localization => (__localization["additional-system-languages"] ?? []).includes(_language)) ?? null, null);
 
@@ -341,7 +344,7 @@ export class Localization extends EventTarget {
                 );
 
                 if (localization === null) {
-                    throw new Error(`No localizations for system language${navigator.languages.length > 0 ? `${navigator.languages.length > 1 ? "s" : ""} ${navigator.languages.join(", ")}` : ""}!`);
+                    throw new Error(`No localizations for system language${_languages.length > 0 ? `${_languages.length > 1 ? "s" : ""} ${_languages.join(", ")}` : ""}!`);
                 }
             }
         }
@@ -362,12 +365,17 @@ export class Localization extends EventTarget {
 
     /**
      * @param {LocalizationObject} localization
-     * @returns {Promise<{[key: string]: Texts}>}
+     * @param {string} module
+     * @returns {Promise<Texts>}
      */
-    async #getTexts(localization) {
-        this.#texts[localization.language] ??= (async () => (typeof localization.texts === "function" ? localization.texts() : localization.texts) ?? {})();
+    async #getTexts(localization, module) {
+        this.#texts[localization.language] ??= {};
 
-        return this.#texts[localization.language];
+        this.#texts[localization.language][module] ??= (async () => (typeof localization.texts === "function" ? await localization.texts(
+            module
+        ) : localization.texts?.[module]) ?? {})();
+
+        return this.#texts[localization.language][module];
     }
 
     /**
