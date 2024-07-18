@@ -17,7 +17,7 @@ export class Localization extends EventTarget {
     /**
      * @type {LocalizationObject[]}
      */
-    #localizations;
+    #localizations = [];
     /**
      * @type {SettingsStorage | null}
      */
@@ -29,7 +29,7 @@ export class Localization extends EventTarget {
     /**
      * @type {{[key: string]: {[key: string]: Promise<Texts>}}}
      */
-    #texts;
+    #texts = {};
 
     /**
      * @param {SettingsStorage | null} settings_storage
@@ -53,8 +53,6 @@ export class Localization extends EventTarget {
         super();
 
         this.#settings_storage = settings_storage;
-        this.#localizations = [];
-        this.#texts = {};
     }
 
     /**
