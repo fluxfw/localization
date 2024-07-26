@@ -3,6 +3,7 @@ import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAG
 
 /** @typedef {import("./Language.mjs").Language} Language */
 /** @typedef {import("./LocalizationObject.mjs").LocalizationObject} LocalizationObject */
+/** @typedef {import("./Logger/Logger.mjs").Logger} Logger */
 /** @typedef {import("./Placeholders.mjs").Placeholders} Placeholders */
 /** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 /** @typedef {import("./Texts.mjs").Texts} Texts */
@@ -19,6 +20,10 @@ export class Localization extends EventTarget {
      */
     #localizations = [];
     /**
+     * @type {Logger}
+     */
+    #logger;
+    /**
      * @type {SettingsStorage | null}
      */
     #settings_storage;
@@ -32,11 +37,13 @@ export class Localization extends EventTarget {
     #texts = {};
 
     /**
+     * @param {Logger | null} logger
      * @param {SettingsStorage | null} settings_storage
      * @returns {Promise<Localization>}
      */
-    static async new(settings_storage = null) {
+    static async new(logger = null, settings_storage = null) {
         const localization = new this(
+            logger ?? console,
             settings_storage
         );
 
@@ -46,12 +53,14 @@ export class Localization extends EventTarget {
     }
 
     /**
+     * @param {Logger} logger
      * @param {SettingsStorage | null} settings_storage
      * @private
      */
-    constructor(settings_storage) {
+    constructor(logger, settings_storage) {
         super();
 
+        this.#logger = logger;
         this.#settings_storage = settings_storage;
     }
 
@@ -192,7 +201,9 @@ export class Localization extends EventTarget {
         }
 
         if (text === "") {
-            console.warn(`Missing text ${key} for module ${module} and language ${localization.language}!`);
+            this.#logger.debug(
+                `Missing text ${key} for module ${module} and language ${localization.language}!`
+            );
 
             text = `MISSING ${key}!`;
 
@@ -244,7 +255,9 @@ export class Localization extends EventTarget {
         }
 
         if (text === "") {
-            console.warn(`Missing text for language ${localization.language}!`);
+            this.#logger.debug(
+                `Missing text for language ${localization.language}!`
+            );
 
             text = `MISSING ${localization.language}!`;
 
