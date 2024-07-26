@@ -6,6 +6,12 @@ Changes:
 
 \-
 
+## v2024-07-26-2
+
+Changes:
+
+- Rename `LOCALIZATION` variables
+
 ## v2024-07-26-1
 
 Changes:
