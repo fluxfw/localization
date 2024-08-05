@@ -6,6 +6,15 @@ Changes:
 
 \-
 
+## v2024-08-05-1
+
+Changes:
+
+- Rename `change` event, remove constant, only if changed, bypassable or forceable on `addLocalization`|`render`|`setLanguage`, add `addEventListener`/ `removeEventListener` JSDoc
+- `render` public, bypassable or forceable on `addLocalization`|`setLanguage`
+- Remove settings storage
+- Clone and inmutable objects
+
 ## v2024-07-26-2
 
 Changes:

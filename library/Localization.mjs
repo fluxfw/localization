@@ -1,20 +1,21 @@
 import { LANGUAGE_SYSTEM } from "./SYSTEM_LOCALIZATION.mjs";
-import { SETTINGS_STORAGE_KEY_LANGUAGE } from "./SettingsStorage/SETTINGS_STORAGE_KEY.mjs";
 
 /** @typedef {import("./Language.mjs").Language} Language */
 /** @typedef {import("./LocalizationObject.mjs").LocalizationObject} LocalizationObject */
+/** @typedef {import("./LocalizationWithEvents.mjs").LocalizationWithEvents} LocalizationWithEvents */
 /** @typedef {import("./Logger/Logger.mjs").Logger} Logger */
 /** @typedef {import("./Placeholders.mjs").Placeholders} Placeholders */
-/** @typedef {import("./SettingsStorage/SettingsStorage.mjs").SettingsStorage} SettingsStorage */
 /** @typedef {import("./Texts.mjs").Texts} Texts */
-
-export const LOCALIZATION_EVENT_CHANGE = "localization-change";
 
 export class Localization extends EventTarget {
     /**
      * @type {string | null}
      */
-    #language;
+    #language = null;
+    /**
+     * @type {string | null}
+     */
+    #last_change_detail = null;
     /**
      * @type {LocalizationObject[]}
      */
@@ -23,10 +24,6 @@ export class Localization extends EventTarget {
      * @type {Logger}
      */
     #logger;
-    /**
-     * @type {SettingsStorage | null}
-     */
-    #settings_storage;
     /**
      * @type {AbortController | null}
      */
@@ -38,48 +35,63 @@ export class Localization extends EventTarget {
 
     /**
      * @param {Logger | null} logger
-     * @param {SettingsStorage | null} settings_storage
-     * @returns {Promise<Localization>}
+     * @returns {Promise<LocalizationWithEvents>}
      */
-    static async new(logger = null, settings_storage = null) {
-        const localization = new this(
-            logger ?? console,
-            settings_storage
+    static async new(logger = null) {
+        return new this(
+            logger ?? console
         );
-
-        localization.#language = await localization.#getLanguage();
-
-        return localization;
     }
 
     /**
      * @param {Logger} logger
-     * @param {SettingsStorage | null} settings_storage
      * @private
      */
-    constructor(logger, settings_storage) {
+    constructor(logger) {
         super();
 
         this.#logger = logger;
-        this.#settings_storage = settings_storage;
     }
 
     /**
      * @param {LocalizationObject} localization
+     * @param {boolean | null} render
+     * @param {boolean | null} change_event
      * @returns {Promise<void>}
      */
-    async addLocalization(localization) {
+    async addLocalization(localization, render = null, change_event = null) {
         if (this.#localizations.some(_localization => _localization.language === localization.language)) {
             throw new Error(`Localization with language ${localization.language} already exists!`);
         }
 
-        this.#localizations.push(localization);
+        this.#localizations.push(this.#deepFreeze(
+            {
+                ...(localization["additional-system-languages"] ?? null) !== null ? {
+                    "additional-system-languages": Array.from(localization["additional-system-languages"])
+                } : null,
+                ...(localization.default ?? null) !== null ? {
+                    default: localization.default
+                } : null,
+                ...(localization.direction ?? null) !== null ? {
+                    direction: localization.direction
+                } : null,
+                ...(localization.label ?? null) !== null ? {
+                    label: typeof localization.label === "function" ? localization.label : structuredClone(localization.label)
+                } : null,
+                language: localization.language,
+                ...(localization.texts ?? null) !== null ? {
+                    texts: typeof localization.texts === "function" ? localization.texts : structuredClone(localization.texts)
+                } : null
+            }
+        ));
 
-        if (!(this.#language !== null ? this.#language === localization.language : localization.default ?? false)) {
+        if (!(render === null ? this.#language !== null ? this.#language === localization.language : localization.default ?? false : render)) {
             return;
         }
 
-        await this.#render();
+        await this.render(
+            change_event
+        );
     }
 
     /**
@@ -94,14 +106,16 @@ export class Localization extends EventTarget {
             language
         );
 
-        return {
-            direction: localization.direction ?? "ltr",
-            label: await this.#getLabel(
-                localization
-            ),
-            language: localization.language,
-            system
-        };
+        return this.#deepFreeze(
+            {
+                direction: localization.direction ?? "ltr",
+                label: await this.#getLabel(
+                    localization
+                ),
+                language: localization.language,
+                system
+            }
+        );
     }
 
     /**
@@ -128,52 +142,83 @@ export class Localization extends EventTarget {
             );
         }
 
-        return Object.fromEntries(Object.entries(languages).sort(([
-            language_1,
-            label_1
-        ], [
-            language_2,
-            label_2
-        ]) => {
-            const system_1 = language_1 === LANGUAGE_SYSTEM ? 0 : 1;
-            const system_2 = language_2 === LANGUAGE_SYSTEM ? 0 : 1;
+        return this.#deepFreeze(
+            Object.fromEntries(Object.entries(languages).sort(([
+                language_1,
+                label_1
+            ], [
+                language_2,
+                label_2
+            ]) => {
+                const system_1 = language_1 === LANGUAGE_SYSTEM ? 0 : 1;
+                const system_2 = language_2 === LANGUAGE_SYSTEM ? 0 : 1;
 
-            if (system_1 > system_2) {
-                return 1;
+                if (system_1 > system_2) {
+                    return 1;
+                }
+
+                if (system_1 < system_2) {
+                    return -1;
+                }
+
+                const _label_1 = label_1.toLowerCase();
+                const _label_2 = label_2.toLowerCase();
+
+                if (_label_1 > _label_2) {
+                    return 1;
+                }
+
+                if (_label_1 < _label_2) {
+                    return -1;
+                }
+
+                return 0;
+            }))
+        );
+    }
+
+    /**
+     * @param {boolean | null} change_event
+     * @returns {Promise<void>}
+     */
+    async render(change_event = null) {
+        const language = await this.getLanguage();
+
+        this.#initSystemDetector(
+            language
+        );
+
+        const change_detail = this.#deepFreeze(
+            {
+                language
             }
-
-            if (system_1 < system_2) {
-                return -1;
-            }
-
-            const _label_1 = label_1.toLowerCase();
-            const _label_2 = label_2.toLowerCase();
-
-            if (_label_1 > _label_2) {
-                return 1;
-            }
-
-            if (_label_1 < _label_2) {
-                return -1;
-            }
-
-            return 0;
+        );
+        const change_detail_string = JSON.stringify(change_detail);
+        if (!(change_event === null ? this.#last_change_detail === change_detail_string : change_event)) {
+            return;
+        }
+        this.#last_change_detail = change_detail_string;
+        this.dispatchEvent(new CustomEvent("change", {
+            detail: change_detail
         }));
     }
 
     /**
      * @param {string | null} language
+     * @param {boolean | null} render
+     * @param {boolean | null} change_event
      * @returns {Promise<void>}
      */
-    async setLanguage(language = null) {
+    async setLanguage(language = null, render = null, change_event = null) {
         this.#language = language;
 
-        await this.#settings_storage?.store(
-            SETTINGS_STORAGE_KEY_LANGUAGE,
-            this.#language
-        );
+        if (!(render ?? true)) {
+            return;
+        }
 
-        await this.#render();
+        await this.render(
+            change_event
+        );
     }
 
     /**
@@ -288,6 +333,28 @@ export class Localization extends EventTarget {
     }
 
     /**
+     * @template V
+     * @param {V} value
+     * @returns {V}
+     */
+    #deepFreeze(value) {
+        if (value !== null && [
+            "function",
+            "object"
+        ].includes(typeof value)) {
+            Object.freeze(value);
+
+            Object.values(value).forEach(_value => {
+                this.#deepFreeze(
+                    _value
+                );
+            });
+        }
+
+        return value;
+    }
+
+    /**
      * @param {boolean} system
      * @returns {LocalizationObject | null}
      */
@@ -305,15 +372,6 @@ export class Localization extends EventTarget {
             this,
             system_label
         ) : localization.label) ?? localization.language;
-    }
-
-    /**
-     * @returns {Promise<string | null>}
-     */
-    async #getLanguage() {
-        return await this.#settings_storage?.get(
-            SETTINGS_STORAGE_KEY_LANGUAGE
-        ) ?? null;
     }
 
     /**
@@ -382,9 +440,11 @@ export class Localization extends EventTarget {
     async #getTexts(localization, module) {
         this.#texts[localization.language] ??= {};
 
-        this.#texts[localization.language][module] ??= (async () => (typeof localization.texts === "function" ? await localization.texts(
-            module
-        ) : localization.texts?.[module]) ?? {})();
+        this.#texts[localization.language][module] ??= (async () => this.#deepFreeze(
+            (typeof localization.texts === "function" ? structuredClone(await localization.texts(
+                module
+            )) : localization.texts?.[module]) ?? {}
+        ))();
 
         return this.#texts[localization.language][module];
     }
@@ -406,7 +466,7 @@ export class Localization extends EventTarget {
             this.#system_detector_abort_controller = new AbortController();
 
             addEventListener("languagechange", async () => {
-                await this.#render();
+                await this.render();
             }, {
                 signal: this.#system_detector_abort_controller.signal
             });
@@ -419,23 +479,6 @@ export class Localization extends EventTarget {
 
             this.#system_detector_abort_controller = null;
         }
-    }
-
-    /**
-     * @returns {Promise<void>}
-     */
-    async #render() {
-        const language = await this.getLanguage();
-
-        this.#initSystemDetector(
-            language
-        );
-
-        this.dispatchEvent(new CustomEvent(LOCALIZATION_EVENT_CHANGE, {
-            detail: {
-                language
-            }
-        }));
     }
 
     /**
