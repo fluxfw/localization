@@ -2,4 +2,6 @@
 
 set -e
 
-js-lint "`dirname "$0"`"
+root_folder="`dirname "$0"`"
+
+js-lint "$root_folder"
